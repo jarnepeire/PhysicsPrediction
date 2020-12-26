@@ -22,12 +22,17 @@ public class NewLauncher : MonoBehaviour
     public LineRenderer LineRender;
 
     private float _Gravity;
+    private Vector3 _GravityVector;
+    public int lineSegments;
     // Start is called before the first frame update
     void Start()
     {
+        lineSegments = 20;
         _Gravity = -9.81f;
+        _GravityVector = new Vector3(0f, -9.81f, 0f);
+
         transform.rotation = Quaternion.LookRotation(Direction);
-        LineRender.positionCount = 10;
+        LineRender.positionCount = lineSegments;
 
     }
 
@@ -45,14 +50,14 @@ public class NewLauncher : MonoBehaviour
             Debug.Log("TIME " + Ti);
 
 
-
+            //launch projectile
             Projectile p = Instantiate(ProjectilePrefab);
             p.transform.position = LaunchPos.position;
             p.GetComponent<Rigidbody>().velocity = Direction * Speed;
             p.MaxLifeTime = Ti;
 
 
-
+            //future pos
             Vector3 futurePos = new Vector3
             (
                 LaunchPos.position.x + Direction.x * Speed * Ti,
@@ -62,31 +67,18 @@ public class NewLauncher : MonoBehaviour
             HitIndicator.position = futurePos;
 
             //draw line
-            for (int i = 0; i < 10; i++)
+            float timeSegment = Ti / (float)lineSegments;
+            LineRender.SetPosition(0, LaunchPos.position);
+            for (int i = 0; i < lineSegments; i++)
             {
+                if (i == 0)
+                    continue;
 
-                //float time = Ti / (float)i;
-                //Vector3 post = LaunchPos.position + Direction * (Speed * time + (_Gravity * (time * time)) / 2f);
-                Vector3 post = calcposintime(Direction * Speed, i / 10f);
-                LineRender.SetPosition(i, post);
+                float time = i * timeSegment;
+                Vector3 postAtTime = LaunchPos.position + Direction * Speed * time + _GravityVector * (time * time) / 2f;
+                LineRender.SetPosition(i - 1, postAtTime);
             }
-
-
+            LineRender.SetPosition(lineSegments - 1, futurePos);
         }
-    }
-
-
-
-
-    Vector3 calcposintime(Vector3 vel, float time)
-    {
-        Vector3 Vxz = vel;
-        Vxz.y = 0f;
-
-        Vector3 res = LaunchPos.position + vel * time;
-        float sy = _Gravity * (time * time) + (vel.y * time) + LaunchPos.position.y;
-        res.y = sy;
-
-        return res;
     }
 }

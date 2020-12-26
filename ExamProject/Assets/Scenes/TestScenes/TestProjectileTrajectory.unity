@@ -413,6 +413,7 @@ MonoBehaviour:
     type: 3}
   HitIndicator: {fileID: 127072521}
   LineRender: {fileID: 574993711}
+  lineSegments: 20
 --- !u!120 &574993711
 LineRenderer:
   m_ObjectHideFlags: 0
@@ -453,7 +454,7 @@ LineRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Positions:
-  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 1}
   - {x: 4, y: 5, z: 5}
   - {x: 8, y: 0, z: 10}
   m_Parameters:
