@@ -24,6 +24,7 @@ public class NewLauncher : MonoBehaviour
     private float _Gravity;
     private Vector3 _GravityVector;
     public int lineSegments;
+
     // Start is called before the first frame update
     void Start()
     {
