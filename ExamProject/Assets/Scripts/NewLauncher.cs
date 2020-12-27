@@ -20,6 +20,7 @@ public class NewLauncher : MonoBehaviour
     public Projectile ProjectilePrefab;
     public Transform HitIndicator;
     public LineRenderer LineRender;
+    public Runner _runner;
 
     private float _Gravity;
     private Vector3 _GravityVector;
@@ -28,12 +29,11 @@ public class NewLauncher : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        lineSegments = 20;
         _Gravity = -9.81f;
         _GravityVector = new Vector3(0f, -9.81f, 0f);
 
         transform.rotation = Quaternion.LookRotation(Direction);
-        LineRender.positionCount = lineSegments;
+        LineRender.positionCount = lineSegments + 1;
 
     }
 
@@ -44,11 +44,14 @@ public class NewLauncher : MonoBehaviour
         {
             //Figure out when grenade will land
             //Solving for time Ti 
-            float Ti = ( -Direction.y * Speed - Mathf.Sqrt((Direction.y * Direction.y) * (Speed * Speed) - 2 * _Gravity * (LaunchPos.position.y - 0) ) ) / _Gravity;
-            if (Ti < 0f)
-                Ti = ( -Direction.y * Speed - Mathf.Sqrt((Direction.y * Direction.y) * (Speed * Speed) - 2 * _Gravity * (LaunchPos.position.y - 0) ) ) / _Gravity;
+            
+
+            float plus = ( -Direction.y * Speed + Mathf.Sqrt((Direction.y * Direction.y) * (Speed * Speed) - 2 * _Gravity * (LaunchPos.position.y - 0) ) ) / _Gravity;
+            float min = ( -Direction.y * Speed - Mathf.Sqrt((Direction.y * Direction.y) * (Speed * Speed) - 2 * _Gravity * (LaunchPos.position.y - 0) ) ) / _Gravity;
+            float Ti = Mathf.Max(min, plus);
+          
            
-            Debug.Log("TIME " + Ti);
+            Debug.Log("LAUNCHER TIME " + Ti);
 
 
             //launch projectile
@@ -57,12 +60,12 @@ public class NewLauncher : MonoBehaviour
             p.GetComponent<Rigidbody>().velocity = Direction * Speed;
             p.MaxLifeTime = Ti;
 
-
+    
             //future pos
             Vector3 futurePos = new Vector3
             (
                 LaunchPos.position.x + Direction.x * Speed * Ti,
-                0,
+                0.1f,
                 LaunchPos.position.z + Direction.z * Speed * Ti
             );
             HitIndicator.position = futurePos;
@@ -77,9 +80,14 @@ public class NewLauncher : MonoBehaviour
 
                 float time = i * timeSegment;
                 Vector3 postAtTime = LaunchPos.position + Direction * Speed * time + _GravityVector * (time * time) / 2f;
-                LineRender.SetPosition(i - 1, postAtTime);
+                LineRender.SetPosition(i, postAtTime);
             }
-            LineRender.SetPosition(lineSegments - 1, futurePos);
+            LineRender.SetPosition(lineSegments, futurePos);
+
+
+            _runner.LaunchPos = LaunchPos.position;
+            _runner.SetTargetToCatch(ref p);
+            _runner.StartRunning();
         }
     }
 }
