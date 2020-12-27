@@ -5,11 +5,18 @@ using UnityEngine;
 public class Runner : MonoBehaviour
 {
     private bool CanStartRunning;
+    private bool RUN;
     private Projectile TargetToCatch;
     float[] timers = new float[3];
     Vector3[] positions = new Vector3[3];
     Vector2[] positions_2D = new Vector2[3];
     public int posCount;
+
+    private float timeElapsed;
+
+    float predictedTotalTime;
+    Vector3 predictedFuturePos;
+    Vector3 runnerVel;
 
     public Vector3 LaunchPos;
     // Start is called before the first frame update
@@ -17,6 +24,8 @@ public class Runner : MonoBehaviour
     {
         CanStartRunning = false;
         posCount = 0;
+        RUN = false;
+        timeElapsed = 0f;
     }
 
     private void FixedUpdate()
@@ -62,7 +71,7 @@ public class Runner : MonoBehaviour
                 Vector3 dir = positions[1] - positions[0];
                 float cte = dir.z / dir.x;
 
-                //we need to convert our problem to a 2d problem to apply lagrance on
+                //we need to convert our problem to a 2d problem to apply lagrange on
                 //y stays the same
                 //positions_2D[0] = new Vector3(positions[0].x + cte * positions[0].z, positions[0].y);
                 //positions_2D[1] = new Vector3(positions[1].x + cte * positions[1].z, positions[1].y);
@@ -101,10 +110,13 @@ public class Runner : MonoBehaviour
                 float D = (b*b) - 4 * a * c;
                 float fx1 = (-b - Mathf.Sqrt(D)) / (2 * a);
                 float fx2 = (-b + Mathf.Sqrt(D)) / (2 * a);
-
+                float futX = Mathf.Max(fx1, fx2);
                 //Vector3 dirToTarget = (Vector3.right + cte * Vector3.forward).normalized;
+       
                 Vector3 dirToTarget = (Vector3.right + cte * Vector3.forward).normalized;
-                float distance = fx2 - fx1;
+                if (dir.x < 0f) dirToTarget = -dirToTarget;
+                //float distance = Mathf.Abs(futX - positions_2D[0].x);
+                float distance = Mathf.Abs(futX - positions_2D[0].x);
 
 
 
@@ -117,14 +129,41 @@ public class Runner : MonoBehaviour
                 float p1_p2_time = timers[1] - timers[0];
                 float speed = p1_p2_distanceTransformed / p1_p2_time;
 
-
+                //Variables
                 float REALtotalTime = distance / speed;
                 Vector3 predictedLocation = LaunchPos + dirToTarget * speed * REALtotalTime + new Vector3(0f, -9.81f, 0f) * (REALtotalTime * REALtotalTime) / 2f;
-                //
+
+
+                predictedTotalTime = REALtotalTime;
+                predictedFuturePos = predictedLocation;
+                predictedFuturePos.y = 0f;
+
                 Debug.Log("AI CALCULATED TIME " + REALtotalTime);
                 CanStartRunning = false;
+                RUN = true;
+
+                //
+                
+                Vector3 toTarget = predictedFuturePos - transform.position;
+                Vector3 dirrr = toTarget.normalized;
+                float speeddddd = toTarget.magnitude / predictedTotalTime;
+                runnerVel = dirrr * speeddddd;
+                runnerVel.y = 0f;
+                this.GetComponent<Rigidbody>().velocity = runnerVel;
             }
 
+        }
+
+        if (RUN == true)
+        {
+            this.GetComponent<Rigidbody>().velocity = runnerVel;
+            timeElapsed += Time.deltaTime;
+            if (timeElapsed > predictedTotalTime)
+            {
+                RUN = false;
+                this.GetComponent<Rigidbody>().velocity = Vector3.zero;
+            }
+           
         }
     }
 
