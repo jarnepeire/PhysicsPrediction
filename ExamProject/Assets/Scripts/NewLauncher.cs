@@ -29,6 +29,7 @@ public class NewLauncher : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Direction = Direction.normalized;
         _Gravity = -9.81f;
         _GravityVector = new Vector3(0f, -9.81f, 0f);
 

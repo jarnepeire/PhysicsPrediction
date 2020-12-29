@@ -417,7 +417,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 127072519}
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 8, y: 0.01, z: 10}
+  m_LocalPosition: {x: 8.1, y: 0.01, z: 10}
   m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
   m_Children: []
   m_Father: {fileID: 0}
@@ -535,9 +535,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6383a44dad0a18b48b7331e85e277f21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Direction: {x: 2, y: 1.5, z: 2}
+  Direction: {x: 0.3, y: 0.3, z: 0.7}
   LaunchPos: {fileID: 1910633492}
-  Speed: 3.5
+  Speed: 5
   ProjectilePrefab: {fileID: 3811384584696313345, guid: 13c7a13fe8950884299dbba310106535,
     type: 3}
   HitIndicator: {fileID: 127072521}
@@ -648,7 +648,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!114 &1107324157
 MonoBehaviour:
@@ -663,6 +663,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   posCount: 0
+  StartRunningAfter_X_Seconds: 0
   LaunchPos: {x: 0, y: 0, z: 0}
 --- !u!65 &1107324158
 BoxCollider:
@@ -826,6 +827,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   posCount: 0
+  StartRunningAfter_X_Seconds: 0
   LaunchPos: {x: 0, y: 0, z: 0}
 --- !u!54 &1675406009
 Rigidbody:

@@ -18,10 +18,14 @@ public class Runner : MonoBehaviour
     Vector3 predictedFuturePos;
     Vector3 runnerVel;
 
+
+    float test_TIMER;
+    public float StartRunningAfter_X_Seconds;
     public Vector3 LaunchPos;
     // Start is called before the first frame update
     void Start()
     {
+        test_TIMER = 0f;
         CanStartRunning = false;
         posCount = 0;
         RUN = false;
@@ -32,14 +36,18 @@ public class Runner : MonoBehaviour
     {
         if (CanStartRunning)
         {
-
-            if (posCount < 3)
+            test_TIMER += Time.fixedDeltaTime;
+            if (test_TIMER > StartRunningAfter_X_Seconds)
             {
+                if (posCount < 3)
+                {
 
-                timers[posCount] = Time.fixedTime;
-                positions[posCount] = TargetToCatch.transform.position;
-                posCount++;
+                    timers[posCount] = Time.fixedTime;
+                    positions[posCount] = TargetToCatch.transform.position;
+                    posCount++;
+                }
             }
+
         }
     }
 
@@ -70,7 +78,7 @@ public class Runner : MonoBehaviour
                 //make 1 direction
                 Vector3 dir = positions[1] - positions[0];
                 float cte = dir.z / dir.x;
-
+                //dir = dir.normalized;
                 //we need to convert our problem to a 2d problem to apply lagrange on
                 //y stays the same
                 //positions_2D[0] = new Vector3(positions[0].x + cte * positions[0].z, positions[0].y);
@@ -115,10 +123,19 @@ public class Runner : MonoBehaviour
        
                 Vector3 dirToTarget = (Vector3.right + cte * Vector3.forward).normalized;
                 if (dir.x < 0f) dirToTarget = -dirToTarget;
-                //float distance = Mathf.Abs(futX - positions_2D[0].x);
+                //float distance = Mathf.Abs(futX - LaunchPos.x);
                 float distance = Mathf.Abs(futX - positions_2D[0].x);
 
-
+                //test
+                Vector3 test_Dir1 = positions[1] - positions[0];
+                Vector3 test_Dir2 = positions[2] - positions[1];
+                float test_time1 = timers[1] - timers[0];
+                float test_time2 = timers[2] - timers[1];
+                float alpha = test_time1 / test_time2;
+                Vector3 test_finalDir = Vector3.Lerp(test_Dir1, test_Dir2, alpha).normalized;
+                Vector3 tttt = new Vector3(0.3f, 0f, 0.7f);
+                tttt = tttt.normalized;
+                //test
 
                 //float p1_p2_distanceTransformed = Mathf.Sqrt((dir.x * dir.x) + (dir.z * dir.z));
                 //float p1_p2_distanceTransformed = dir.magnitude;
@@ -126,12 +143,13 @@ public class Runner : MonoBehaviour
                 //float p1_p2_time = 0.1f;
 
                 float p1_p2_distanceTransformed = Mathf.Sqrt((dir.x * dir.x) + (dir.z * dir.z));
+                float p1_p2_distanceTransformedR = dir.magnitude;
                 float p1_p2_time = timers[1] - timers[0];
                 float speed = p1_p2_distanceTransformed / p1_p2_time;
-
+                float realSpeed = p1_p2_distanceTransformedR / p1_p2_time;
                 //Variables
                 float REALtotalTime = distance / speed;
-                Vector3 predictedLocation = LaunchPos + dirToTarget * speed * REALtotalTime + new Vector3(0f, -9.81f, 0f) * (REALtotalTime * REALtotalTime) / 2f;
+                Vector3 predictedLocation = positions[0] + test_finalDir * realSpeed * REALtotalTime + new Vector3(0f, -9.81f, 0f) * (REALtotalTime * REALtotalTime) / 2f;
 
 
                 predictedTotalTime = REALtotalTime;
