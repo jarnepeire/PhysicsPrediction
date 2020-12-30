@@ -119,12 +119,38 @@ public class Runner : MonoBehaviour
                 float fx1 = (-b - Mathf.Sqrt(D)) / (2 * a);
                 float fx2 = (-b + Mathf.Sqrt(D)) / (2 * a);
                 float futX = Mathf.Max(fx1, fx2);
+                float minX = Mathf.Min(fx1, fx2);
+
+                //voor begin dir te vinde
+                //vind afgeleide
+                float afgeleide = 2 * a * minX + b;
+                Vector3 DIRRRR = dir;
+                Vector3 plsWerk = new Vector3(
+                    DIRRRR.x / Mathf.Sqrt((DIRRRR.x * DIRRRR.x) + (DIRRRR.z * DIRRRR.z)),
+                    afgeleide,
+                    DIRRRR.z / Mathf.Sqrt((DIRRRR.x * DIRRRR.x) + (DIRRRR.z * DIRRRR.z))
+                    );
+                plsWerk = plsWerk.normalized;
+
+                Vector3 plsWerk2 = new Vector3
+                    (
+                    DIRRRR.x,
+                    afgeleide * ((DIRRRR.x * DIRRRR.x) + (DIRRRR.z * DIRRRR.z)),
+                    DIRRRR.z
+                    );
+                plsWerk2 = plsWerk.normalized;
+                //vind 3d dir adhv afgeleide
+
+
                 //Vector3 dirToTarget = (Vector3.right + cte * Vector3.forward).normalized;
-       
+
                 Vector3 dirToTarget = (Vector3.right + cte * Vector3.forward).normalized;
                 if (dir.x < 0f) dirToTarget = -dirToTarget;
+
+
                 //float distance = Mathf.Abs(futX - LaunchPos.x);
                 float distance = Mathf.Abs(futX - positions_2D[0].x);
+                float distance_NR2 = Mathf.Abs(futX - minX);
 
                 //test
                 Vector3 test_Dir1 = positions[1] - positions[0];
@@ -135,6 +161,8 @@ public class Runner : MonoBehaviour
                 Vector3 test_finalDir = Vector3.Lerp(test_Dir1, test_Dir2, alpha).normalized;
                 Vector3 tttt = new Vector3(0.3f, 0f, 0.7f);
                 tttt = tttt.normalized;
+
+                Vector3 testtttt_Dir1 = (positions[1] - positions[0]).normalized;
                 //test
 
                 //float p1_p2_distanceTransformed = Mathf.Sqrt((dir.x * dir.x) + (dir.z * dir.z));
@@ -147,10 +175,12 @@ public class Runner : MonoBehaviour
                 float p1_p2_time = timers[1] - timers[0];
                 float speed = p1_p2_distanceTransformed / p1_p2_time;
                 float realSpeed = p1_p2_distanceTransformedR / p1_p2_time;
+                
                 //Variables
                 float REALtotalTime = distance / speed;
-                Vector3 predictedLocation = positions[0] + test_finalDir * realSpeed * REALtotalTime + new Vector3(0f, -9.81f, 0f) * (REALtotalTime * REALtotalTime) / 2f;
-
+                Vector3 predictedLocation = positions[0] + dir.normalized * realSpeed * REALtotalTime + new Vector3(0f, -9.81f, 0f) * (REALtotalTime * REALtotalTime) / 2f;
+                Vector3 predictedLocation2 = LaunchPos + plsWerk * realSpeed * REALtotalTime + new Vector3(0f, -9.81f, 0f) * (REALtotalTime * REALtotalTime) / 2f;
+     
 
                 predictedTotalTime = REALtotalTime;
                 predictedFuturePos = predictedLocation;

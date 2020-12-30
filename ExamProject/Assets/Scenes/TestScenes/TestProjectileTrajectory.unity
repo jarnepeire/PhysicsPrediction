@@ -535,9 +535,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6383a44dad0a18b48b7331e85e277f21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Direction: {x: 0.3, y: 0.3, z: 0.7}
+  Direction: {x: 1, y: 3, z: 1.5}
   LaunchPos: {fileID: 1910633492}
-  Speed: 5
+  Speed: 9
   ProjectilePrefab: {fileID: 3811384584696313345, guid: 13c7a13fe8950884299dbba310106535,
     type: 3}
   HitIndicator: {fileID: 127072521}
@@ -663,7 +663,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   posCount: 0
-  StartRunningAfter_X_Seconds: 0
+  StartRunningAfter_X_Seconds: 1.5
   LaunchPos: {x: 0, y: 0, z: 0}
 --- !u!65 &1107324158
 BoxCollider:
