@@ -15,8 +15,8 @@ public class Projectile : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //_lifeTime += Time.deltaTime;
-        //if (_lifeTime > MaxLifeTime)
-        //    Destroy(this.gameObject);
+        _lifeTime += Time.deltaTime;
+        if (_lifeTime > MaxLifeTime)
+            Destroy(this.gameObject);
     }
 }
