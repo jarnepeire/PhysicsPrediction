@@ -19,4 +19,10 @@ public class Projectile : MonoBehaviour
         if (_lifeTime > MaxLifeTime)
             Destroy(this.gameObject);
     }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.tag == "Runner")
+            Destroy(this.gameObject);
+    }
 }

@@ -7,6 +7,7 @@ public class RunnerCamera : MonoBehaviour
     private Runner _runner;
     private Camera _camera;
     private bool _isRunning;
+    public LayerMask LayerMask;
 
     // Start is called before the first frame update
     void Start()
@@ -26,11 +27,20 @@ public class RunnerCamera : MonoBehaviour
             Vector3 screenPos = _camera.WorldToViewportPoint(projectile.transform.position);
             if (IsObjectInView(screenPos))
             {
-                Debug.Log("BEEP BEEP");
-                //------------------------------------------------------------------------------------adjust when fixed
-                //_runner.SetTargetToCatch(ref projectile);
-                //_runner.StartTracking();
-                _isRunning = true;
+                //See if nothing is blocking its view to really see the projectile
+                Vector3 dir = (projectile.transform.position - transform.position).normalized;
+                RaycastHit hit;
+                Ray r = new Ray(transform.position, dir);
+
+                if (Physics.Raycast(r, out hit, 100f, LayerMask))
+                {
+                    if (hit.collider.gameObject.tag == "Projectile")
+                    {
+                        _runner.SetTargetToCatch(ref projectile);
+                        _runner.StartTracking();
+                        _isRunning = true;
+                    }
+                }
             }
         }
     }

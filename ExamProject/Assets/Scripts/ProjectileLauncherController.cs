@@ -7,7 +7,7 @@ public class ProjectileLauncherController : MonoBehaviour
     //Public Variables
     [Header("Rotation Variables")]
     public float RotationSpeed = 50f;
-    bool UseMaxAngle = false;
+    public bool UseMaxAngle = false;
     public float MaxAngleInDegrees = 90f;
 
     [Header("Launch Variables")]

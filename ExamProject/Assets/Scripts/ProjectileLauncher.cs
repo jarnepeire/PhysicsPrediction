@@ -44,7 +44,7 @@ public class ProjectileLauncher : MonoBehaviour
         Vector3 futurePos = new Vector3
         (
             LaunchPos.position.x + _direction.x * _speed * _totalTime,
-            0.1f,
+            0.01f,
             LaunchPos.position.z + _direction.z * _speed * _totalTime
         );
 
@@ -72,12 +72,5 @@ public class ProjectileLauncher : MonoBehaviour
         p.transform.position = LaunchPos.position;
         p.GetComponent<Rigidbody>().velocity = _direction * _speed;
         p.MaxLifeTime = _totalTime * 2;
-
-        //-----------------------------------------------------------------------to delete
-        //Set runner ready
-        //_runner.LaunchPos = LaunchPos.position;
-        _runner.SetTargetToCatch(ref p);
-        _runner.StartTracking();
-        
     }
 }
