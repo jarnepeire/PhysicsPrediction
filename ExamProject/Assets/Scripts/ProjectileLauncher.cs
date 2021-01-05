@@ -9,13 +9,12 @@ public class ProjectileLauncher : MonoBehaviour
     [Header("General Variables")]
     public Transform LaunchPos;
     public Projectile ProjectilePrefab;
-    public Transform HitIndicator;
+    public float ProjectileLifetimeMultiplier = 2f;
 
     [Header("Render Variables")]
     public PhysicsPredicter predicter;
-
-  //delete when done
-    public Runner _runner;
+    public bool UseHitIndicator = true;
+    public Transform HitIndicator;
 
     //Private Variables
     private float _speed;
@@ -49,10 +48,14 @@ public class ProjectileLauncher : MonoBehaviour
         );
 
         //Set indicator sprite to that position to visualize
-        HitIndicator.position = futurePos;
+        if (UseHitIndicator)
+            HitIndicator.position = futurePos;
 
         //Set physics settings for our predictor, so he can visualize the trajectory of our projectile
         predicter.SetPhysicsSettings(LaunchPos, _direction, _speed, _totalTime);
+
+        //Since time is calculated in here, we're going to grab the UI from the controller and set the setting here
+        GetComponent<ProjectileLauncherController>().Display.SetTimeToLand(_totalTime);
     }
 
     public void SetDirection(Vector3 dir)
@@ -71,6 +74,6 @@ public class ProjectileLauncher : MonoBehaviour
         Projectile p = Instantiate(ProjectilePrefab);
         p.transform.position = LaunchPos.position;
         p.GetComponent<Rigidbody>().velocity = _direction * _speed;
-        p.MaxLifeTime = _totalTime * 2;
+        p.MaxLifeTime = _totalTime * ProjectileLifetimeMultiplier;
     }
 }

@@ -37,7 +37,7 @@ public class PhysicsPredicter : MonoBehaviour
     private float _speed;
     private float _totalTimeToLand;
     private Vector3 _gravityVector = new Vector3(0f, -9.81f, 0f);
-    private int _lineSegmentsSimulation = 125;
+    private int _lineSegmentsSimulation = 175;
 
     // Start is called before the first frame update
     void Start()

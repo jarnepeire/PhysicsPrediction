@@ -7,12 +7,6 @@ public class RunnerController : MonoBehaviour
     public RunnerCamera CameraControl;
     public Runner RunnerControl;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
     // Update is called once per frame
     void Update()
     {

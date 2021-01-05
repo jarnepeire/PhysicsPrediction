@@ -13,6 +13,9 @@ public class ProjectileLauncherController : MonoBehaviour
     [Header("Launch Variables")]
     public float Speed;
 
+    [Header("UI Variables")]
+    public LauncherDisplay Display;
+
     //Private Variables
     private ProjectileLauncher _launcher;
     private float _speedIncrement = 0.5f;
@@ -23,6 +26,9 @@ public class ProjectileLauncherController : MonoBehaviour
         _launcher = GetComponent<ProjectileLauncher>();
         _launcher.SetDirection(Vector3.forward);
         _launcher.SetSpeed(Speed);
+
+        Display.SetSpeed(Speed);
+        Display.SetDir(Vector3.forward);
     }
 
     // Update is called once per frame
@@ -69,6 +75,7 @@ public class ProjectileLauncherController : MonoBehaviour
         //Set Direction
         Vector3 direction = transform.rotation * Vector3.forward;
         _launcher.SetDirection(direction);
+        Display.SetDir(direction);
     }
 
     private void UpdateSpeed()
@@ -77,11 +84,13 @@ public class ProjectileLauncherController : MonoBehaviour
         {
             Speed += _speedIncrement;
             _launcher.SetSpeed(Speed);
+            Display.SetSpeed(Speed);
         }
         if (Input.GetKeyDown(KeyCode.Z))
         {
             Speed -= _speedIncrement;
             _launcher.SetSpeed(Speed);
+            Display.SetSpeed(Speed);
         }
     }
 

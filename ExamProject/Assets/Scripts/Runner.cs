@@ -79,7 +79,8 @@ public class Runner : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (_canRun) RunToTarget();
+        if (_canRun) 
+            RunToTarget();
     }
 
     private void RunToTarget()
@@ -271,7 +272,6 @@ public class Runner : MonoBehaviour
     public void ResetRunner()
     {
         StopRunning();
-
         _targetToCatch = null;
         _projectilePrediction = new ProjectilePrediction(0f, 0f, new Vector3(0f, 0f, 0f));
         transform.position = _startPos;
