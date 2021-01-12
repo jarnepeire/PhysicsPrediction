@@ -34,7 +34,7 @@ public class RunnerCamera : MonoBehaviour
 
                 if (Physics.Raycast(r, out hit, 100f, LayerMask))
                 {
-                    if (hit.collider.gameObject.tag == "Projectile")
+                    if (hit.collider.gameObject.CompareTag("Projectile"))
                     {
                         _runner.SetTargetToCatch(ref projectile);
                         _runner.StartTracking();

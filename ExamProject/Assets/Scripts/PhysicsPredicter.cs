@@ -21,6 +21,7 @@ public class PhysicsPredicter : MonoBehaviour
     //Global Variables
     [Header("General Variables")]
     public bool UseCustomPhysicsPrediction = true;
+    public bool UsingDrag = false;
     public GameObject Projectile;
 
     [Header("Visualization Variables")]
@@ -38,6 +39,8 @@ public class PhysicsPredicter : MonoBehaviour
     private float _totalTimeToLand;
     private Vector3 _gravityVector = new Vector3(0f, -9.81f, 0f);
     private int _lineSegmentsSimulation = 175;
+    private float _k;
+    private float _c;
 
     // Start is called before the first frame update
     void Start()
@@ -93,9 +96,16 @@ public class PhysicsPredicter : MonoBehaviour
     void Update()
     {
         if (UseCustomPhysicsPrediction)
-            VisualizeCustomTrajectory();
+        {
+            if (UsingDrag)
+                VisualizeCustomTrajectoryWithDrag();
+            else
+                VisualizeCustomTrajectory();
+        }
         else
+        {
             VisualizeUnityTrajectory();
+        }
     }
 
     private void VisualizeCustomTrajectory()
@@ -127,6 +137,36 @@ public class PhysicsPredicter : MonoBehaviour
         LineRender.SetPosition(CustomLineSegments, futurePos);
     }
 
+    private void VisualizeCustomTrajectoryWithDrag()
+    {
+        //(1) The Custom Way:
+        //Calculate the positions at certain times in the future
+        //To determine at which time, we check how many line segments we want in total -> divide total time / segments
+        float timeSegment = _totalTimeToLand / (float)CustomLineSegments;
+
+        //Set position count
+        LineRender.positionCount = CustomLineSegments + 1;
+
+        //Set start position at launch 
+        LineRender.SetPosition(0, _launchPos.position);
+
+        //Set all next positions to pre-calculated positions in the near future
+        for (int i = 0; i < CustomLineSegments; i++)
+        {
+            if (i == 0)
+                continue;
+
+            float time = i * timeSegment;
+
+            Vector3 postAtTime = CalculatePositionWithDragForce(time);
+            LineRender.SetPosition(i, postAtTime);
+        }
+
+        //Set last position to the ultimate landing position
+        Vector3 futurePos = CalculatePositionWithDragForce(_totalTimeToLand);
+        LineRender.SetPosition(CustomLineSegments, futurePos);
+    }
+
     private void VisualizeUnityTrajectory()
     {
         //(2) The Unity Way:
@@ -151,11 +191,31 @@ public class PhysicsPredicter : MonoBehaviour
         }
     }
 
-    public void SetPhysicsSettings(Transform launchPos, Vector3 dir, float speed, float totalTime)
+    Vector3 CalculatePositionWithDragForce(float t)
+    {
+        //EulerNumber
+        float e = 2.718281828459f;
+
+        //Solving the equation: Pt = g - kPt (simplified version for taking drag into account)
+        //We can solve the following: Pt = (gt - Ae^-kt) / k + B
+        //With A and B being constants found from the position and velocity of the particle at t = 0
+        Vector3 A = _speed * _direction - (_gravityVector / _k);
+        Vector3 B = _launchPos.position - (A / _k);
+
+        //Position in time with drag force applied
+        Vector3 Pt = ((_gravityVector * t - A * Mathf.Pow(e, -_k * t)) / _k) + B;
+        Pt = _gravityVector - _k * Pt;
+
+        return Pt;
+    }
+
+    public void SetPhysicsSettings(Transform launchPos, Vector3 dir, float speed, float totalTime, float k = 0, float c = 0)
     {
         _launchPos = launchPos;
         _direction = dir;
         _speed = speed;
         _totalTimeToLand = totalTime;
+        _k = k;
+        _c = c;
     }
 }

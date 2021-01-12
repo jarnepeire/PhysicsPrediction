@@ -6,11 +6,13 @@ public class ProjectileLauncherController : MonoBehaviour
 {
     //Public Variables
     [Header("Rotation Variables")]
-    public float RotationSpeed = 50f;
+    public bool DisableMovement = false;
     public bool UseMaxAngle = false;
+    public float RotationSpeed = 50f;
     public float MaxAngleInDegrees = 90f;
 
     [Header("Launch Variables")]
+    public bool IsTargetLauncher = false;
     public float Speed;
 
     [Header("UI Variables")]
@@ -18,14 +20,23 @@ public class ProjectileLauncherController : MonoBehaviour
 
     //Private Variables
     private ProjectileLauncher _launcher;
+    private ProjectileLauncherAtTarget _targetLauncher;
     private float _speedIncrement = 0.5f;
 
     // Start is called before the first frame update
     void Start()
     {
-        _launcher = GetComponent<ProjectileLauncher>();
-        _launcher.SetDirection(Vector3.forward);
-        _launcher.SetSpeed(Speed);
+        if (IsTargetLauncher)
+        {
+            _targetLauncher = GetComponent<ProjectileLauncherAtTarget>();
+            _targetLauncher.SetSpeed(Speed);
+        }
+        else 
+        {
+            _launcher = GetComponent<ProjectileLauncher>();
+            _launcher.SetDirection(Vector3.forward);
+            _launcher.SetSpeed(Speed);
+        }
 
         Display.SetSpeed(Speed);
         Display.SetDir(Vector3.forward);
@@ -34,7 +45,8 @@ public class ProjectileLauncherController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        UpdateRotation();
+        if (!DisableMovement) 
+            UpdateRotation();
         UpdateSpeed();
         UpdateLaunch();
     }
@@ -74,22 +86,28 @@ public class ProjectileLauncherController : MonoBehaviour
 
         //Set Direction
         Vector3 direction = transform.rotation * Vector3.forward;
-        _launcher.SetDirection(direction);
+        if (!IsTargetLauncher)
+        {
+            _launcher.SetDirection(direction);
+        }
         Display.SetDir(direction);
     }
 
     private void UpdateSpeed()
     {
+
         if (Input.GetKeyDown(KeyCode.X))
         {
             Speed += _speedIncrement;
-            _launcher.SetSpeed(Speed);
+            if (IsTargetLauncher) _targetLauncher.SetSpeed(Speed);
+            else _launcher.SetSpeed(Speed);
             Display.SetSpeed(Speed);
         }
         if (Input.GetKeyDown(KeyCode.Z))
         {
             Speed -= _speedIncrement;
-            _launcher.SetSpeed(Speed);
+            if (IsTargetLauncher) _targetLauncher.SetSpeed(Speed);
+            else _launcher.SetSpeed(Speed);
             Display.SetSpeed(Speed);
         }
     }
@@ -98,7 +116,8 @@ public class ProjectileLauncherController : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            _launcher.LaunchProjectile();
+            if (IsTargetLauncher) _targetLauncher.LaunchProjectile();
+            else _launcher.LaunchProjectile();
         }
     }
 }

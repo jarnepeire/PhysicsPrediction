@@ -9,7 +9,7 @@ public class ReflectProjectile : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         GameObject go = collision.gameObject;
-        if (go.tag == "Projectile")
+        if (go.CompareTag("Projectile"))
         {
             //Create reflect vector (simple idea to send projectile in reflected direction)
             Vector3 reflect = Vector3.Reflect(go.transform.forward, collision.GetContact(0).normal).normalized;
