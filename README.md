@@ -39,6 +39,9 @@ As mentioned before, it now knows its first 3 observed positions of this project
 #### Extra Prediction Method (Analytical Solution for 2D Predictions)
 An alternative predicting way is also implented, using Lagrange interpolations. Keep in mind, this way would work best for 2D predictions. To showcase that this works for our case, I use a work-around to convert our 3D problem into a 2D problem. Our 3D positions become 2D positions, and with those, we can form a quadratic polynomial using Lagrange interpolations. With this quadratic equation, we can substitute it into finding our 2 intersection points. The furthest intersection point having a projected X value of the landing position. With these variables, we can also estimate a direction, a "2d speed" and "2d distance" -> giving us the time and so on. This method has its limitations for 3D problems though, such as invalid discriminants when the positions are in the negative area of our world, which is caused by this little work-around from 3D to 2D. You won't encounter this in original 2D problems, and could perfectly predict positions in a 2D world (take Angry Birds as an example). 
 
+#### Start Prediction With Drag
+An implementation of drag forces are in a fourth demo, prediction the physics trajectory of a projectile with drag. Also able to calculate a desired direction in order to hit a given target. Further steps would be to take the drag into account and refine the direction, which is there, but has issues and is not 100% completed.
+
 # Results
 Now the most exciting part after all the technical explanations, the results!
 
