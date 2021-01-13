@@ -6,6 +6,9 @@ public class Projectile : MonoBehaviour
 {
     public float MaxLifeTime;
     public float _lifeTime;
+
+    bool UseDragForce = false;
+    public Vector3 DragForce;
     // Start is called before the first frame update
     void Start()
     {
@@ -15,6 +18,11 @@ public class Projectile : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (UseDragForce)
+        {
+            this.GetComponent<Rigidbody>().AddForce(DragForce);
+        }
+        
         _lifeTime += Time.deltaTime;
         if (_lifeTime > MaxLifeTime)
             Destroy(this.gameObject);

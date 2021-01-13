@@ -23,11 +23,17 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
     public Material InvalidShotMaterial;
 
 
+    public GameObject DragIndicator;
+    public bool UseDrag = false;
     //Viscous Drag Force;
     public float k;
     //Aerodynamic Drag Force;
     public float c;
+    public float dragMargin;
+    private Vector3 _dragLandingPos;
 
+    int iterationCounter;
+    int maxIterations;
     struct FiringData
     {
         public FiringData(bool isValid, float time, Vector3 dir)
@@ -44,6 +50,10 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
 
     void Start()
     {
+        iterationCounter = 0;
+        maxIterations = 50;
+
+        DragIndicator.GetComponent<SpriteRenderer>().enabled = false;
         _gravityVector = new Vector3(0f, -9.81f, 0f);
         GetComponent<MeshRenderer>().material = ValidShotMaterial;
     }
@@ -51,6 +61,14 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
+        //Input DRAG
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            UseDrag = !UseDrag;
+            DragIndicator.GetComponent<SpriteRenderer>().enabled = false;
+        }
+
         //Calculate dir 
         FiringData firingData = CalculateFiringData();
         if (!firingData.IsValid)
@@ -63,25 +81,24 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
         Quaternion rot = Quaternion.LookRotation(firingData.DirToLaunch);
         this.transform.rotation = rot;
 
+        //Show drag indicator
+        if (UseDrag)
+        {
+            
+            DragIndicator.GetComponent<SpriteRenderer>().enabled = true;
+            _dragLandingPos = CalculatePositionWithDragForce(_totalTime, _direction);
+            _dragLandingPos.y = 0.01f;
+            DragIndicator.transform.position = _dragLandingPos;
+
+            //CalculateRefinedDirWithDragForce();
+        }
+        
         //Update visualization
-        Predicter.SetPhysicsSettings(LaunchPos, _direction, _speed, _totalTime, k, c);
+        Predicter.SetPhysicsSettings(LaunchPos, _direction, _speed, _totalTime, UseDrag, k, c);
 
         //Since time is calculated in here, we're going to grab the UI from the controller and set the setting here
         GetComponent<ProjectileLauncherController>().Display.SetTimeToLand(_totalTime);
-
-        //Drag force
-        
-        //Vector3 dragForce = -k * _Velocity - c * new Vector3(_Velocity.x * _Velocity.x, _Velocity.y * _Velocity.y, _Velocity.z * _Velocity.z);
-
-        float air_density = 1.225f;
-        float drag_coeff = 1f;
-        float radius = ProjectilePrefab.GetComponent<SphereCollider>().radius;
-        float area = Mathf.PI * (radius * radius);
-
-        Vector3 dragForce = (float)(0.5 * air_density * drag_coeff * area * (_speed * _speed)) * -_direction;
-        Vector3 force = (_direction * _speed) + dragForce;
-
-        _Velocity = _Velocity + force / 1f * Time.deltaTime;
+        _Velocity = _direction * _speed;
     }
 
     FiringData CalculateFiringData()
@@ -132,7 +149,112 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
         return firingData;
     }
 
-    Vector3 CalculatePositionWithDragForce(float t)
+    Vector3 CalculateRefinedDirWithDragForce()
+    {
+        //Calculate firing solution, and get initial landing position guess
+        float distanceToDragLanding = (_dragLandingPos - LaunchPos.position).magnitude;
+        float distanceToTarget = (Target.position - LaunchPos.position).magnitude;
+        float distanceDiff = distanceToDragLanding - distanceToTarget;
+
+        //If our initial guess isn't too far from the landing position with drag -> use initial direction
+        if (Mathf.Abs(distanceDiff) < dragMargin + float.Epsilon)
+        {
+            return _direction;
+        }
+
+
+        //Binary search to ensure closer trajectory to target
+        float minBound = 0;
+        float maxBound = 0;
+        Vector3 dirToT = Target.position - LaunchPos.position;
+        float angle = Mathf.Asin(_direction.y / _direction.magnitude);
+        if (distanceDiff > 0)
+        {
+            //Maximum bound -> use shortest possible shot as minimum bound
+            maxBound = angle;
+            minBound = -Mathf.PI / 2f;
+
+            //Create new rotated direction
+            Vector3 dirCopy = _direction;
+            Vector3 newDir = Quaternion.AngleAxis(minBound * Mathf.Rad2Deg, Vector3.forward) * dirCopy;
+
+            //Calculate new landing pos and check if it's close enough in distance to target
+            Vector3 landingPos = CalculatePositionWithDragForce(_totalTime, newDir);
+            landingPos.y = 0.01f;
+            float distanceToLandPos = (landingPos - LaunchPos.position).magnitude;
+            float diff = distanceToLandPos - distanceToTarget;
+
+            //If so, use this as direction
+            if (Mathf.Abs(diff) < dragMargin + float.Epsilon)
+                return newDir;
+        }
+        else
+        {
+            //Need to check for maximum bound here
+            minBound = angle;
+            maxBound = Mathf.PI / 4f;
+
+            //Create new rotated direction
+            Vector3 dirCopy = _direction;
+            Vector3 newDir = Quaternion.AngleAxis(maxBound * Mathf.Rad2Deg, Vector3.forward) * dirCopy;
+
+            //Calculate new landing pos and check if it's close enough in distance to target
+            Vector3 landingPos = CalculatePositionWithDragForce(_totalTime, newDir);
+            landingPos.y = 0.01f;
+            float distanceToLandPos = (landingPos - LaunchPos.position).magnitude;
+            float diff = distanceToLandPos - distanceToTarget;
+
+            //If so, use this as direction
+            if (Mathf.Abs(diff) < dragMargin + float.Epsilon)
+                return newDir;
+
+            //If not, check if we even overshoot the target with best possible angle
+            if (diff < 0)
+            {
+                //Need to increase the force in that case, and retry until we get it right
+                _speed += 1f;
+                iterationCounter += 1;
+                if (iterationCounter < maxIterations)
+                {
+                    return CalculateRefinedDirWithDragForce();
+                }
+                else
+                {
+                    //If it seems we can't even get it right even by increasing the force, just reset it and return regular direction
+                    iterationCounter = 0;
+                    _speed -= maxIterations;
+                    return _direction;
+                }
+            }
+        }
+
+        //We have a min and max bound -> so search for something inbetween that will fit the margin
+        Vector3 closestDir = new Vector3();
+
+        float rDist = float.MaxValue;
+        while (Mathf.Abs(rDist) < dragMargin + float.Epsilon)
+        {
+            float a = (maxBound - minBound) / 2f;
+
+            Vector3 dirCopy = _direction;
+            closestDir = Quaternion.AngleAxis(a * Mathf.Rad2Deg, Vector3.forward) * dirCopy;
+
+            //Calculate new landing pos and check if it's close enough in distance to target
+            Vector3 landingPos = CalculatePositionWithDragForce(_totalTime, closestDir);
+            landingPos.y = 0.01f;
+            float dist = (landingPos - LaunchPos.position).magnitude;
+            rDist = dist - distanceToTarget;
+
+            if (rDist < 0)
+                minBound = angle;
+            else
+                maxBound = angle;
+        }
+        return closestDir;
+
+    }
+
+    Vector3 CalculatePositionWithDragForce(float t, Vector3 dir)
     {
         //EulerNumber
         float e = 2.718281828459f;
@@ -140,8 +262,8 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
         //Solving the equation: Pt = g - kPt (simplified version for taking drag into account)
         //We can solve the following: Pt = (gt - Ae^-kt) / k + B
         //With A and B being constants found from the position and velocity of the particle at t = 0
-        Vector3 A = _speed * _direction - (_gravityVector / k);
-        Vector3 B = LaunchPos.position - (A / k);
+        Vector3 A = _speed * dir - (_gravityVector / k);
+        Vector3 B = LaunchPos.position + (A / k);
 
         //Position in time with drag force applied
         Vector3 Pt = ((_gravityVector * t - A * Mathf.Pow(e, -k * t)) / k) + B;
@@ -159,7 +281,13 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
         //Launch projectile
         Projectile p = Instantiate(ProjectilePrefab);
         p.transform.position = LaunchPos.position;
-        p.GetComponent<Rigidbody>().velocity = _Velocity;
+
+        Rigidbody rb = p.GetComponent<Rigidbody>();
+        rb.velocity = _Velocity;
+     
+        if (UseDrag)
+            rb.drag = k;
+
         p.MaxLifeTime = _totalTime * 2f;
     }
 }

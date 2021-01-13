@@ -14,4 +14,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Intercept_Demo_01.unity
     guid: 418d7cbc3d58fa144b2630d0722c31d5
+  - enabled: 1
+    path: Assets/Scenes/FiringWithDrag_Demo_01.unity
+    guid: 73018c146580d4741acecf897d347289
   m_configObjects: {}

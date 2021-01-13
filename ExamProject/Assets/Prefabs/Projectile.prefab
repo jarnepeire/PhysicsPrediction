@@ -125,3 +125,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MaxLifeTime: 5
   _lifeTime: 0
+  DragForce: {x: 0, y: 0, z: 0}

@@ -20,6 +20,10 @@ public class SceneSwitcher : MonoBehaviour
         {
             SceneManager.LoadScene("Intercept_Demo_02", LoadSceneMode.Single);
         }
+        if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4))
+        {
+            SceneManager.LoadScene("FiringWithDrag_Demo_01", LoadSceneMode.Single);
+        }
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             Application.Quit();

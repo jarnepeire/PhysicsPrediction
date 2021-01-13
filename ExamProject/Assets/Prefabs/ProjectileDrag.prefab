@@ -70,7 +70,7 @@ PrefabInstance:
     - target: {fileID: 9094615426686807550, guid: 13c7a13fe8950884299dbba310106535,
         type: 3}
       propertyPath: m_Drag
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 13c7a13fe8950884299dbba310106535, type: 3}

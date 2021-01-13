@@ -42,6 +42,9 @@ public class PhysicsPredicter : MonoBehaviour
     private float _k;
     private float _c;
 
+
+    public Vector3 A;
+    public Vector3 B;
     // Start is called before the first frame update
     void Start()
     {
@@ -199,17 +202,16 @@ public class PhysicsPredicter : MonoBehaviour
         //Solving the equation: Pt = g - kPt (simplified version for taking drag into account)
         //We can solve the following: Pt = (gt - Ae^-kt) / k + B
         //With A and B being constants found from the position and velocity of the particle at t = 0
-        Vector3 A = _speed * _direction - (_gravityVector / _k);
-        Vector3 B = _launchPos.position - (A / _k);
+        A = _speed * _direction - (_gravityVector / _k);
+        B = _launchPos.position + (A / _k);
 
         //Position in time with drag force applied
         Vector3 Pt = ((_gravityVector * t - A * Mathf.Pow(e, -_k * t)) / _k) + B;
-        Pt = _gravityVector - _k * Pt;
 
         return Pt;
     }
 
-    public void SetPhysicsSettings(Transform launchPos, Vector3 dir, float speed, float totalTime, float k = 0, float c = 0)
+    public void SetPhysicsSettings(Transform launchPos, Vector3 dir, float speed, float totalTime, bool usingDrag = false, float k = 0, float c = 0)
     {
         _launchPos = launchPos;
         _direction = dir;
@@ -217,5 +219,6 @@ public class PhysicsPredicter : MonoBehaviour
         _totalTimeToLand = totalTime;
         _k = k;
         _c = c;
+        UsingDrag = usingDrag;
     }
 }

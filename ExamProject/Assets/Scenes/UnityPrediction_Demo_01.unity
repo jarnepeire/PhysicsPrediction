@@ -339,9 +339,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a968a74c6778c9a40b84d0a154a2394c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  RotationSpeed: 50
+  DisableMovement: 0
   UseMaxAngle: 0
+  RotationSpeed: 50
   MaxAngleInDegrees: 90
+  IsTargetLauncher: 0
   Speed: 6
   Display: {fileID: 390456011}
 --- !u!114 &145455862
@@ -907,6 +909,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   UseCustomPhysicsPrediction: 0
+  UsingDrag: 0
   Projectile: {fileID: 7438615752754655162, guid: 13c7a13fe8950884299dbba310106535,
     type: 3}
   LineRender: {fileID: 0}
@@ -918,6 +921,8 @@ MonoBehaviour:
   - {fileID: 169948196}
   - {fileID: 2020187710}
   - {fileID: 300397660}
+  A: {x: 0, y: 0, z: 0}
+  B: {x: 0, y: 0, z: 0}
 --- !u!4 &382541125
 Transform:
   m_ObjectHideFlags: 0
@@ -2340,7 +2345,7 @@ MonoBehaviour:
     Change
     Direction: Arrow Keys
 
-    Switch Demo: 1-2-3
+    Switch Demo: 1-2-3-4
 
     Quit: ESC'
 --- !u!222 &1329042200
