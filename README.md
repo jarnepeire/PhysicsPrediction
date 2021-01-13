@@ -44,15 +44,15 @@ Now the most exciting part after all the technical explanations, the results!
 
 Demo 1: Showcasing Unity's physics system, the projectile launcher, additional forces on contact with walls and simulated full trajectory visualization.
 
-INSERT GIF
+![Unity Demo](/ImagesReadme/UnityDemoGif.gif)
 
 Demo 1: Showcasing self inplemented physics predictions, the projectile launcher, the runner AI and predicted locations for visualized trajectory. 
 
-INSERT GIF
+![Interception Demo 1](/ImagesReadme/RunnerDemo1Gif.gif)
 
 Demo 2: Similar to demo 1, showcasing the observation of the AI more (starts predicting and running on projectile in sight)
 
-INSERT GIF
+![Interception Demo 2](/ImagesReadme/RunnerDemo2Gif.gif)
 
 # Conclusion/Future Extensions?
 While working on these demo's, I learned about what is accurate in real world physics, and how it can be translated into code and implementations. Unity's interesting physics system and some mathematical concepts I didn't know existed. I have a few fully working demo's showcasing different simple to more complex predictions that can directly be used or recognized in modern games of many genres. 
