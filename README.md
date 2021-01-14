@@ -2,10 +2,10 @@
 This is my exam project for Gameplay Programming (2020-2021), with "physics predictions" being the researched topic.
 This readme will have the following structure (in case you want to skip ahead): 
 
-1. What, how and why "Physics Prediction"
-2. How did I design/implement it?
-3. Results
-4. Conclusion/Future Extensions? 
+1. [What, how and why "Physics Prediction"](#what-how-and-why-physics-prediction)
+2. [How did I design/implement it?](#how-did-i-designimplement-it)
+3. [Results](#results)
+4. [Conclusion/Future Extensions? ](#conclusionfuture-extensions)
 
 ## What, how and why "Physics Prediction"
 ### Why?
