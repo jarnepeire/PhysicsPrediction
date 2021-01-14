@@ -18,7 +18,6 @@ The words "physics predictions" probably can paint a little picture in your head
 I will be using Unity Engine (version 2019.4.16f1) to create some demo's I have pictured on paper. I will be using Unity's built in physics system to display what it can do, as well as making my own implementation based on physical formulas to display what I came up with. The idea of my own implementation is to make a cannon that can shoot projectiles through the air in a physically accurate motion. The cannon can be controlled to change direction or to change the force behind the projectile. Furthermore, there will be an AI that will observe the area, calculating when and where it will land, to then calculate the optimal velocity to intercept the projectile and catch it. It does not receive any pre-calculated information from the launcher, and uses mathematical concepts to find starting variables such as time, speed and direction, to then continue with the actual physics prediction.
 
 # How did I design/implement it?
-# Design
 ## Projectile Launcher
 The actual launcher which will be responsible for shooting the projectiles in the air. It can be controlled as follows:
 
