@@ -3,38 +3,27 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class ProjectileLauncher : MonoBehaviour
-{
-    //All physics related formula's are based on the book "AI For Games", by Ian Millington (Paragraph 3.5 Physics Prediction)
-    [Header("General Variables")]
-    public Transform LaunchPos;
-    public Projectile ProjectilePrefab;
-    public float ProjectileLifetimeMultiplier = 2f;
+/* 
+ * This is one type of launcher in which a direction and speed is given, and a target position is calculated
+ * All physics related formula's are based on the book "AI For Games", by Ian Millington (Paragraph 3.5 Physics Prediction)
+ */
 
+public class ProjectileLauncher : BaseLauncher
+{
     [Header("Render Variables")]
-    public PhysicsPredicter predicter;
     public bool UseHitIndicator = true;
     public Transform HitIndicator;
 
-    //Private Variables
-    private float _speed;
-    private Vector3 _direction = Vector3.forward;
-    private Vector3 _gravityVector;
-    private float _totalTime = 0f;
-
-    // Start is called before the first frame update
     void Start()
     {
-        _gravityVector = new Vector3(0f, -9.81f, 0f);
         transform.rotation = Quaternion.LookRotation(_direction);
-        predicter.SetPhysicsSettings(LaunchPos, _direction, _speed, 0f);
+        Predicter.SetPhysicsSettings(LaunchPos, _direction, _speed, 0f);
     }
 
-    // Update is called once per frame
     void Update()
     {
         //Figure out when projectile will land (time to land)
-        //Solving for time (_totalTime)
+        //Solving for time
         float plus = (-_direction.y * _speed + Mathf.Sqrt((_direction.y * _direction.y) * (_speed * _speed) - 2 * _gravityVector.y * (LaunchPos.position.y - 0))) / _gravityVector.y;
         float min = (-_direction.y * _speed - Mathf.Sqrt((_direction.y * _direction.y) * (_speed * _speed) - 2 * _gravityVector.y * (LaunchPos.position.y - 0))) / _gravityVector.y;
         _totalTime = Mathf.Max(min, plus);
@@ -52,23 +41,13 @@ public class ProjectileLauncher : MonoBehaviour
             HitIndicator.position = futurePos;
 
         //Set physics settings for our predictor, so he can visualize the trajectory of our projectile
-        predicter.SetPhysicsSettings(LaunchPos, _direction, _speed, _totalTime);
+        Predicter.SetPhysicsSettings(LaunchPos, _direction, _speed, _totalTime);
 
-        //Since time is calculated in here, we're going to grab the UI from the controller and set the setting here
+        //We're going to grab the UI from the controller and set the setting here
         GetComponent<ProjectileLauncherController>().Display.SetTimeToLand(_totalTime);
     }
 
-    public void SetDirection(Vector3 dir)
-    {
-        _direction = dir;
-    }
-
-    public void SetSpeed(float speed)
-    {
-        _speed = speed;
-    }
-
-    public void LaunchProjectile()
+    public override void LaunchProjectile()
     {
         //Launch projectile
         Projectile p = Instantiate(ProjectilePrefab);

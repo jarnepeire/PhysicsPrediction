@@ -86,7 +86,7 @@ public class PhysicsPredicter : MonoBehaviour
         {
             LineRender = GetComponent<LineRenderer>();
             if (!LineRender)
-                Debug.Log("No LineRenderer was assinged!");
+                Debug.Log("No LineRenderer was assigned!");
         }
     }
 

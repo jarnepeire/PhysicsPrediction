@@ -9,6 +9,7 @@ public class Projectile : MonoBehaviour
 
     bool UseDragForce = false;
     public Vector3 DragForce;
+
     // Start is called before the first frame update
     void Start()
     {

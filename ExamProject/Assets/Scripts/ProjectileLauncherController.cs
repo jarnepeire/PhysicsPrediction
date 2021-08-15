@@ -2,40 +2,38 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/*
+ * This class is responsible for translating raw input into launcher actions,
+ * and updates the launcher information to the UI display.
+ * 
+ * E.g. 'SPACE' launches projectile, 'X' increases the speed/force at which the projectile launches with
+ */
+
 public class ProjectileLauncherController : MonoBehaviour
 {
-    //Public Variables
+    [Header("Launcher Variables")]
+    public BaseLauncher Launcher;
+    public float Speed;
+    public float SpeedIncrement = 0.5f;
+
     [Header("Rotation Variables")]
-    public bool DisableMovement = false;
+
+    //When controlling a launcher that calculates its own direction, it's best to leave this on false
+    public bool DisableManualLauncherRotation = false;
     public bool UseMaxAngle = false;
     public float RotationSpeed = 50f;
     public float MaxAngleInDegrees = 90f;
 
-    [Header("Launch Variables")]
-    public bool IsTargetLauncher = false;
-    public float Speed;
-
     [Header("UI Variables")]
     public LauncherDisplay Display;
-
-    //Private Variables
-    private ProjectileLauncher _launcher;
-    private ProjectileLauncherAtTarget _targetLauncher;
-    private float _speedIncrement = 0.5f;
 
     // Start is called before the first frame update
     void Start()
     {
-        if (IsTargetLauncher)
+        if (Launcher)
         {
-            _targetLauncher = GetComponent<ProjectileLauncherAtTarget>();
-            _targetLauncher.SetSpeed(Speed);
-        }
-        else 
-        {
-            _launcher = GetComponent<ProjectileLauncher>();
-            _launcher.SetDirection(Vector3.forward);
-            _launcher.SetSpeed(Speed);
+            Launcher.SetDirection(Vector3.forward);
+            Launcher.SetSpeed(Speed);
         }
 
         Display.SetSpeed(Speed);
@@ -45,69 +43,74 @@ public class ProjectileLauncherController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!DisableMovement) 
-            UpdateRotation();
+        UpdateRotation();
         UpdateSpeed();
         UpdateLaunch();
     }
 
     private void UpdateRotation()
     {
-        //Store old rotation
-        Quaternion oldRot = transform.rotation;
+        if (!DisableManualLauncherRotation)
+        {
+            //Store old rotation
+            Quaternion oldRot = transform.rotation;
 
-        //Rotate
-        if (Input.GetKey(KeyCode.LeftArrow))
-        {
-            transform.rotation = Quaternion.AngleAxis(-RotationSpeed * Time.deltaTime, Vector3.up) * transform.rotation;
-        }
-        else if (Input.GetKey(KeyCode.RightArrow))
-        {
-            transform.rotation = Quaternion.AngleAxis(RotationSpeed * Time.deltaTime, Vector3.up) * transform.rotation;
-        }
-        if (Input.GetKey(KeyCode.UpArrow))
-        {
-            transform.rotation = Quaternion.AngleAxis(-RotationSpeed * Time.deltaTime, Vector3.right) * transform.rotation;
-        }
-        else if (Input.GetKey(KeyCode.DownArrow))
-        {
-            transform.rotation = Quaternion.AngleAxis(RotationSpeed * Time.deltaTime, Vector3.right) * transform.rotation;
-        }
-
-        if (UseMaxAngle)
-        {
-            //Angle check -> in case our rotation causes our object to go over the defined max angle, we return to the old rotation
-            float angle = Quaternion.Angle(Quaternion.LookRotation(Vector3.forward), transform.rotation);
-            if (angle > MaxAngleInDegrees || transform.rotation.x > 0f) //x > 0 is so that the launcher can not look more down to the ground
+            //Rotate
+            if (Input.GetKey(KeyCode.LeftArrow))
             {
-                transform.rotation = oldRot;
+                transform.rotation = Quaternion.AngleAxis(-RotationSpeed * Time.deltaTime, Vector3.up) * transform.rotation;
             }
+            else if (Input.GetKey(KeyCode.RightArrow))
+            {
+                transform.rotation = Quaternion.AngleAxis(RotationSpeed * Time.deltaTime, Vector3.up) * transform.rotation;
+            }
+            if (Input.GetKey(KeyCode.UpArrow))
+            {
+                transform.rotation = Quaternion.AngleAxis(-RotationSpeed * Time.deltaTime, Vector3.right) * transform.rotation;
+            }
+            else if (Input.GetKey(KeyCode.DownArrow))
+            {
+                transform.rotation = Quaternion.AngleAxis(RotationSpeed * Time.deltaTime, Vector3.right) * transform.rotation;
+            }
+
+            if (UseMaxAngle)
+            {
+                //Angle check -> in case our rotation causes our object to go over the defined max angle, we return to the old rotation
+                float angle = Quaternion.Angle(Quaternion.LookRotation(Vector3.forward), transform.rotation);
+                if (angle > MaxAngleInDegrees || transform.rotation.x > 0f) //x > 0 is so that the launcher can not look more down to the ground
+                {
+                    transform.rotation = oldRot;
+                }
+            }
+
+            //Set Direction
+            Vector3 desiredDir = transform.rotation * Vector3.forward;
+            Launcher.SetDirection(desiredDir);
+        }
+        else
+        {
+            //Rotate towards calculated direction
+            Vector3 direction = Launcher.GetDirection();
+            Quaternion rot = Quaternion.LookRotation(direction);
+            this.transform.rotation = rot;
         }
 
-        //Set Direction
-        Vector3 direction = transform.rotation * Vector3.forward;
-        if (!IsTargetLauncher)
-        {
-            _launcher.SetDirection(direction);
-        }
-        Display.SetDir(direction);
+        //Set UI direction
+        Display.SetDir(Launcher.GetDirection());
     }
 
     private void UpdateSpeed()
     {
-
         if (Input.GetKeyDown(KeyCode.X))
         {
-            Speed += _speedIncrement;
-            if (IsTargetLauncher) _targetLauncher.SetSpeed(Speed);
-            else _launcher.SetSpeed(Speed);
+            Speed += SpeedIncrement;
+            Launcher.SetSpeed(Speed);
             Display.SetSpeed(Speed);
         }
         if (Input.GetKeyDown(KeyCode.Z))
         {
-            Speed -= _speedIncrement;
-            if (IsTargetLauncher) _targetLauncher.SetSpeed(Speed);
-            else _launcher.SetSpeed(Speed);
+            Speed -= SpeedIncrement;
+            Launcher.SetSpeed(Speed);
             Display.SetSpeed(Speed);
         }
     }
@@ -116,8 +119,7 @@ public class ProjectileLauncherController : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            if (IsTargetLauncher) _targetLauncher.LaunchProjectile();
-            else _launcher.LaunchProjectile();
+            Launcher.LaunchProjectile();
         }
     }
 }

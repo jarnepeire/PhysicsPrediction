@@ -2,38 +2,33 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ProjectileLauncherAtTarget : MonoBehaviour
+/* 
+ * This is one type of launcher in which a target position and speed is given, and a desired direction is calculated
+ * All physics related formula's are based on the book "AI For Games", by Ian Millington (Paragraph 3.5 Physics Prediction)
+ */
+
+public class ProjectileLauncherAtTarget : BaseLauncher
 {
-    //Based on the Firing Solution in AI For Games
-    //Instead of us giving direction and force to calculate a final position
-    //We're going to reverse engineer the direction to land at a final position at a certain force
-
-    // Start is called before the first frame update
-    public Projectile ProjectilePrefab;
-    public Transform LaunchPos;
+    [Header("Specific Launcher Options")]
     public Transform Target;
-    private float _speed = 5f;
-    private Vector3 _gravityVector;
-    private Vector3 _direction;
-    private float _totalTime;
-    private Vector3 _Velocity;
-    public PhysicsPredicter Predicter;
-
     public Material ValidShotMaterial;
     public Material InvalidShotMaterial;
 
-
+    [Header("Drag Force Options")]
     public GameObject DragIndicator;
     public bool UseDrag = false;
     //Viscous Drag Force;
     public float k;
     //Aerodynamic Drag Force;
     public float c;
-    public float dragMargin;
-    private Vector3 _dragLandingPos;
+    //Amount of units away a drag force prediction can be off
+    public float DragMargin;
 
-    int iterationCounter;
-    int maxIterations;
+    private Vector3 _previousDirection;
+    private Vector3 _dragLandingPos;
+    private bool _sameDirection;
+    private int _iterationCounter;
+    private int _maxIterations;
     struct FiringData
     {
         public FiringData(bool isValid, float time, Vector3 dir)
@@ -47,50 +42,49 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
         public float TimeToTarget;
         public Vector3 DirToLaunch;
     }
+    private FiringData _firingData;
 
     void Start()
     {
-        iterationCounter = 0;
-        maxIterations = 50;
+        _iterationCounter = 0;
+        _maxIterations = 50;
 
+        Predicter.SetPhysicsSettings(LaunchPos, _direction, _speed, 0f);
         DragIndicator.GetComponent<SpriteRenderer>().enabled = false;
-        _gravityVector = new Vector3(0f, -9.81f, 0f);
         GetComponent<MeshRenderer>().material = ValidShotMaterial;
     }
 
     // Update is called once per frame
     void Update()
     {
-
-        //Input DRAG
+        //Toggle Drag
         if (Input.GetKeyDown(KeyCode.R))
         {
             UseDrag = !UseDrag;
-            DragIndicator.GetComponent<SpriteRenderer>().enabled = false;
+            DragIndicator.GetComponent<SpriteRenderer>().enabled = UseDrag;
         }
 
         //Calculate dir 
+        
         FiringData firingData = CalculateFiringData();
+        _firingData = firingData;
         if (!firingData.IsValid)
             return;
 
+        _previousDirection = _direction;
+        _sameDirection = AreVectorsEqual(_previousDirection, _direction, 0.2f);
         _direction = firingData.DirToLaunch;
         _totalTime = firingData.TimeToTarget;
 
-        //Rotate towards calculated direction
-        Quaternion rot = Quaternion.LookRotation(firingData.DirToLaunch);
-        this.transform.rotation = rot;
-
-        //Show drag indicator
+        //Show drag indicator/update direction to calculated drag direction
         if (UseDrag)
         {
-            
-            DragIndicator.GetComponent<SpriteRenderer>().enabled = true;
             _dragLandingPos = CalculatePositionWithDragForce(_totalTime, _direction);
             _dragLandingPos.y = 0.01f;
+            DragIndicator.GetComponent<SpriteRenderer>().enabled = true;
             DragIndicator.transform.position = _dragLandingPos;
 
-            //CalculateRefinedDirWithDragForce();
+            _direction = CalculateRefinedDirWithDragForce();
         }
         
         //Update visualization
@@ -98,7 +92,7 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
 
         //Since time is calculated in here, we're going to grab the UI from the controller and set the setting here
         GetComponent<ProjectileLauncherController>().Display.SetTimeToLand(_totalTime);
-        _Velocity = _direction * _speed;
+        _velocity = _direction * _speed;
     }
 
     FiringData CalculateFiringData()
@@ -151,17 +145,20 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
 
     Vector3 CalculateRefinedDirWithDragForce()
     {
+        //Only recalculate the refined drag direction when changed
+        if (_sameDirection)
+            return _direction;
+
         //Calculate firing solution, and get initial landing position guess
         float distanceToDragLanding = (_dragLandingPos - LaunchPos.position).magnitude;
         float distanceToTarget = (Target.position - LaunchPos.position).magnitude;
         float distanceDiff = distanceToDragLanding - distanceToTarget;
 
         //If our initial guess isn't too far from the landing position with drag -> use initial direction
-        if (Mathf.Abs(distanceDiff) < dragMargin + float.Epsilon)
+        if (Mathf.Abs(distanceDiff) < DragMargin + float.Epsilon)
         {
             return _direction;
         }
-
 
         //Binary search to ensure closer trajectory to target
         float minBound = 0;
@@ -185,7 +182,7 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
             float diff = distanceToLandPos - distanceToTarget;
 
             //If so, use this as direction
-            if (Mathf.Abs(diff) < dragMargin + float.Epsilon)
+            if (Mathf.Abs(diff) < DragMargin + float.Epsilon)
                 return newDir;
         }
         else
@@ -205,7 +202,7 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
             float diff = distanceToLandPos - distanceToTarget;
 
             //If so, use this as direction
-            if (Mathf.Abs(diff) < dragMargin + float.Epsilon)
+            if (Mathf.Abs(diff) < DragMargin + float.Epsilon)
                 return newDir;
 
             //If not, check if we even overshoot the target with best possible angle
@@ -213,16 +210,16 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
             {
                 //Need to increase the force in that case, and retry until we get it right
                 _speed += 1f;
-                iterationCounter += 1;
-                if (iterationCounter < maxIterations)
+                _iterationCounter += 1;
+                if (_iterationCounter < _maxIterations)
                 {
                     return CalculateRefinedDirWithDragForce();
                 }
                 else
                 {
                     //If it seems we can't even get it right even by increasing the force, just reset it and return regular direction
-                    iterationCounter = 0;
-                    _speed -= maxIterations;
+                    _iterationCounter = 0;
+                    _speed -= _maxIterations;
                     return _direction;
                 }
             }
@@ -232,7 +229,7 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
         Vector3 closestDir = new Vector3();
 
         float rDist = float.MaxValue;
-        while (Mathf.Abs(rDist) < dragMargin + float.Epsilon)
+        while (Mathf.Abs(rDist) < DragMargin + float.Epsilon)
         {
             float a = (maxBound - minBound) / 2f;
 
@@ -250,7 +247,7 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
             else
                 maxBound = angle;
         }
-        return closestDir;
+        return closestDir.normalized;
 
     }
 
@@ -271,23 +268,35 @@ public class ProjectileLauncherAtTarget : MonoBehaviour
         return Pt;
     }
 
-    public void SetSpeed(float speed)
+    public override void SetDirection(Vector3 dir)
     {
-        _speed = speed;
+        //Don't update direction, direction is calculated in this type of launcher
     }
 
-    public void LaunchProjectile()
+    public override void LaunchProjectile()
     {
         //Launch projectile
         Projectile p = Instantiate(ProjectilePrefab);
         p.transform.position = LaunchPos.position;
 
         Rigidbody rb = p.GetComponent<Rigidbody>();
-        rb.velocity = _Velocity;
+        rb.velocity = _velocity;
      
         if (UseDrag)
             rb.drag = k;
 
-        p.MaxLifeTime = _totalTime * 2f;
+        p.MaxLifeTime = _totalTime * ProjectileLifetimeMultiplier;
+    }
+
+    private bool AreVectorsEqual(Vector3 v1, Vector3 v2, float precision)
+    {
+        if (Mathf.Abs(_previousDirection.x - _firingData.DirToLaunch.x) > precision) 
+            return false;
+        else if (Mathf.Abs(_previousDirection.y - _firingData.DirToLaunch.y) > precision) 
+            return false;
+        else if (Mathf.Abs(_previousDirection.z - _firingData.DirToLaunch.z) > precision) 
+            return false;
+        else
+            return true;
     }
 }
