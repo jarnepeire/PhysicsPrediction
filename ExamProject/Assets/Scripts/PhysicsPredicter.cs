@@ -3,33 +3,35 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+/* General Concept
+ *  Simulate the trajection of the projectile upon launch with its current direction and speed and visualize this through the line renderer
+ *  
+ * Two Ways:
+ * (1) The Custom Way:
+ * Based upon real physics formula's (ref: AI For Games, Ian Millington) we will simulate our own trajectory of where our ball be in time
+ * We can define a few variables to get a smooth trajectory along with our calculated physics variables from the projectile launcher
+ * 
+ * (2) The Unity Way:
+ * We can create a scene by code, run a simulation of this and track the ball's position to determine its trajectory
+ * This way, all the math and physics is being left to Unity's built in system, we simply ask for the position in time
+ * 
+ */
+
 public class PhysicsPredicter : MonoBehaviour
 {
-    //------------------------------------- General Concept -------------------------------------
-    //Simulate the trajection of the projectile upon launch with its current direction and speed and visualize this through the line renderer
-
-    //Two Ways:
-    //(1) The Custom Way:
-    //Based upon real physics formula's (ref: AI For Games, Ian Millington) we will simulate our own trajectory of where our ball be in time
-    //We can define a few variables to get a smooth trajectory along with our calculated physics variables from the projectile launcher
-
-    //(2) The Unity Way:
-    //We can create a scene by code, run a simulation of this and track the ball's position to determine its trajectory
-    //This way, all the math and physics is being left to Unity's built in system, we simply ask for the position in time
-    //-------------------------------------------------------------------------------------------
-
     //Global Variables
     [Header("General Variables")]
     public bool UseCustomPhysicsPrediction = true;
     public bool UsingDrag = false;
     public GameObject Projectile;
+    public List<GameObject> SceneObjectsToSimulate;
 
     [Header("Visualization Variables")]
     public LineRenderer LineRender;
+    public Material LineMaterial;
     public int CustomLineSegments = 50;
-    public List<GameObject> SceneObjects;
-
-    //Private
+    
+    //Private Variables
     private Scene _testingScene;
     private PhysicsScene _testingPhysicsScene;
     private PhysicsScene _currentPhysicsScene;
@@ -42,10 +44,9 @@ public class PhysicsPredicter : MonoBehaviour
     private float _k;
     private float _c;
 
+    private Color _lrColorOrange = new Color(229f / 255f, 146f / 255f, 61f / 255f);
+    private Color _lrColorWhite = new Color(1f, 1f, 1f);
 
-    public Vector3 A;
-    public Vector3 B;
-    // Start is called before the first frame update
     void Start()
     {
         //Since we will have our custom physics system and Unity's as one, we need to manually tell which scene to simulate and when
@@ -61,13 +62,12 @@ public class PhysicsPredicter : MonoBehaviour
         _testingPhysicsScene = _testingScene.GetPhysicsScene();
 
         //We need to copy over our scene objects to our test scene, to correctly simulate the case of collisions and other factors too
-        foreach (GameObject go in SceneObjects)
+        foreach (GameObject go in SceneObjectsToSimulate)
         {
             //Create a copy of the game object in our original scene
             Transform tempTransform = go.transform;
             GameObject copy = Instantiate(go);
-            copy.transform.position = tempTransform.position;
-            copy.transform.rotation = tempTransform.rotation;
+            copy.transform.SetPositionAndRotation(tempTransform.position, tempTransform.rotation);
             copy.transform.localScale = tempTransform.localScale;
 
             //If the object has a renderer, we don't want it to render in our actual scene
@@ -98,12 +98,16 @@ public class PhysicsPredicter : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //Raw input to swap physics prediction line
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            UseCustomPhysicsPrediction = !UseCustomPhysicsPrediction;
+        }
+
+        //Visualize trajectory
         if (UseCustomPhysicsPrediction)
         {
-            if (UsingDrag)
-                VisualizeCustomTrajectoryWithDrag();
-            else
-                VisualizeCustomTrajectory();
+            VisualizeCustomTrajectory();
         }
         else
         {
@@ -118,34 +122,11 @@ public class PhysicsPredicter : MonoBehaviour
         //To determine at which time, we check how many line segments we want in total -> divide total time / segments
         float timeSegment = _totalTimeToLand / (float)CustomLineSegments;
 
-        //Set position count
-        LineRender.positionCount = CustomLineSegments + 1;
-
-        //Set start position at launch 
-        LineRender.SetPosition(0, _launchPos.position);
-
-        //Set all next positions to pre-calculated positions in the near future
-        for (int i = 0; i < CustomLineSegments; i++)
-        {
-            if (i == 0)
-                continue;
-
-            float time = i * timeSegment;
-            Vector3 postAtTime = _launchPos.position + _direction * _speed * time + _gravityVector * (time * time) / 2f;
-            LineRender.SetPosition(i, postAtTime);
-        }
-
-        //Set last position to the ultimate landing position
-        Vector3 futurePos = _launchPos.position + _direction * _speed * _totalTimeToLand + _gravityVector * (_totalTimeToLand * _totalTimeToLand) / 2f;
-        LineRender.SetPosition(CustomLineSegments, futurePos);
-    }
-
-    private void VisualizeCustomTrajectoryWithDrag()
-    {
-        //(1) The Custom Way:
-        //Calculate the positions at certain times in the future
-        //To determine at which time, we check how many line segments we want in total -> divide total time / segments
-        float timeSegment = _totalTimeToLand / (float)CustomLineSegments;
+        //Set color of trajectory 
+        if (UsingDrag)
+            LineMaterial.SetColor("_Color", _lrColorWhite);
+        else
+            LineMaterial.SetColor("_Color", _lrColorOrange);
 
         //Set position count
         LineRender.positionCount = CustomLineSegments + 1;
@@ -160,13 +141,12 @@ public class PhysicsPredicter : MonoBehaviour
                 continue;
 
             float time = i * timeSegment;
-
-            Vector3 postAtTime = CalculatePositionWithDragForce(time);
+            Vector3 postAtTime = (UsingDrag) ? CalculatePositionWithDragForce(time) : CalculatePositionWithoutDragForce(time);
             LineRender.SetPosition(i, postAtTime);
         }
 
         //Set last position to the ultimate landing position
-        Vector3 futurePos = CalculatePositionWithDragForce(_totalTimeToLand);
+        Vector3 futurePos = (UsingDrag) ? CalculatePositionWithDragForce(_totalTimeToLand) : CalculatePositionWithoutDragForce(_totalTimeToLand);
         LineRender.SetPosition(CustomLineSegments, futurePos);
     }
 
@@ -180,6 +160,13 @@ public class PhysicsPredicter : MonoBehaviour
             SceneManager.MoveGameObjectToScene(testProj, _testingScene);
             testProj.transform.position = _launchPos.position;
             testProj.GetComponent<Rigidbody>().velocity = _direction * _speed;
+            testProj.GetComponent<Rigidbody>().drag = _k;
+
+            //Set color of trajectory 
+            if (UsingDrag)
+                LineMaterial.SetColor("_Color", _lrColorWhite);
+            else
+                LineMaterial.SetColor("_Color", _lrColorOrange);
 
             //Simulate the scene, every "fixedDeltaTime" seconds track its position and store in line renderer to visualize
             LineRender.positionCount = _lineSegmentsSimulation;
@@ -194,6 +181,12 @@ public class PhysicsPredicter : MonoBehaviour
         }
     }
 
+    Vector3 CalculatePositionWithoutDragForce(float t)
+    {
+        //Solving for Pt = p0 + u*s*t + (gt^2)/2
+        return _launchPos.position + _direction * (_speed * t) + _gravityVector * (t * t) / 2f;
+    }
+
     Vector3 CalculatePositionWithDragForce(float t)
     {
         //EulerNumber
@@ -202,8 +195,8 @@ public class PhysicsPredicter : MonoBehaviour
         //Solving the equation: Pt = g - kPt (simplified version for taking drag into account)
         //We can solve the following: Pt = (gt - Ae^-kt) / k + B
         //With A and B being constants found from the position and velocity of the particle at t = 0
-        A = _speed * _direction - (_gravityVector / _k);
-        B = _launchPos.position + (A / _k);
+        Vector3 A = _speed * _direction - (_gravityVector / _k);
+        Vector3 B = _launchPos.position + (A / _k);
 
         //Position in time with drag force applied
         Vector3 Pt = ((_gravityVector * t - A * Mathf.Pow(e, -_k * t)) / _k) + B;

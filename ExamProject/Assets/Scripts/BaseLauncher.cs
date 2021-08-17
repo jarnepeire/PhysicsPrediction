@@ -24,11 +24,22 @@ public class BaseLauncher : MonoBehaviour
     public virtual void SetSpeed(float speed)
     {
         _speed = speed;
+        var controller = GetComponent<ProjectileLauncherController>();
+        if (controller)
+        {
+            controller.Speed = speed;
+            controller.Display.SetSpeed(speed);
+        }
     }
 
     public virtual void SetDirection(Vector3 dir)
     {
         _direction = dir;
+        var controller = GetComponent<ProjectileLauncherController>();
+        if (controller)
+        {
+            controller.Display.SetDir(dir);
+        }
     }
 
     public Vector3 GetDirection() { return _direction; }

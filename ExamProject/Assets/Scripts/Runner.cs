@@ -138,7 +138,7 @@ public class Runner : MonoBehaviour
         //Now we can predict our final location, because our time factor here is the remaining time, this counters out the first observed direction we have
         //Which results in a pretty accurate predicted location
         Vector3 projectileDir = dir.normalized;
-        Vector3 predictedLocation = _positions3D[0] + projectileDir * speed3D * timeToLand + new Vector3(0f, -9.81f, 0f) * (timeToLand * timeToLand) / 2f;
+        Vector3 predictedLocation = _positions3D[0] + projectileDir * (speed3D * timeToLand) + new Vector3(0f, -9.81f, 0f) * (timeToLand * timeToLand) / 2f;
 
         //Setup prediction information
         ProjectilePrediction prediction;
@@ -274,8 +274,7 @@ public class Runner : MonoBehaviour
         StopRunning();
         _targetToCatch = null;
         _projectilePrediction = new ProjectilePrediction(0f, 0f, new Vector3(0f, 0f, 0f));
-        transform.position = _startPos;
-        transform.rotation = _startRot;
+        transform.SetPositionAndRotation(_startPos, _startRot);
         _runningTimeElapsed = 0f;
         _canDoTracking = false;
         _posCount = 0;

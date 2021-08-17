@@ -17,13 +17,19 @@ public class ProjectileLauncherAtTarget : BaseLauncher
     [Header("Drag Force Options")]
     public GameObject DragIndicator;
     public bool UseDrag = false;
+    public bool RefineLauncherToHitTarget = false;
     //Viscous Drag Force;
     public float k;
     //Aerodynamic Drag Force;
     public float c;
     //Amount of units away a drag force prediction can be off
-    public float DragMargin;
+    public float DragMargin = 2f;
 
+    private int _refineIterations = 3;
+    private int _currentRefineIterations = 0;
+    private bool _isRefined = true;
+    private float _speedBeforeRefinedDrag;
+    private Vector3 _directionBeforeRefinedDrag;
     private Vector3 _previousDirection;
     private Vector3 _dragLandingPos;
     private bool _sameDirection;
@@ -42,7 +48,6 @@ public class ProjectileLauncherAtTarget : BaseLauncher
         public float TimeToTarget;
         public Vector3 DirToLaunch;
     }
-    private FiringData _firingData;
 
     void Start()
     {
@@ -64,17 +69,50 @@ public class ProjectileLauncherAtTarget : BaseLauncher
             DragIndicator.GetComponent<SpriteRenderer>().enabled = UseDrag;
         }
 
-        //Calculate dir 
-        
-        FiringData firingData = CalculateFiringData();
-        _firingData = firingData;
-        if (!firingData.IsValid)
-            return;
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            RefineLauncherToHitTarget = !RefineLauncherToHitTarget;
+        }
 
-        _previousDirection = _direction;
-        _sameDirection = AreVectorsEqual(_previousDirection, _direction, 0.2f);
-        _direction = firingData.DirToLaunch;
-        _totalTime = firingData.TimeToTarget;
+        if (Input.GetKeyDown(KeyCode.L))
+        {
+            _isRefined = false;
+            _currentRefineIterations = _refineIterations;
+        }
+
+        if (_isRefined)
+        {
+            if (_currentRefineIterations <= 0)
+            {
+                _isRefined = true;
+                
+            }
+            else
+            {
+                --_currentRefineIterations;
+                _isRefined = false;
+
+            }
+        }
+
+        if (UseDrag && RefineLauncherToHitTarget)
+        {
+            //_direction = _direction;
+        }
+        else
+        {
+            //Calculate firing data to reach target
+            FiringData firingData = CalculateFiringData();
+            if (!firingData.IsValid)
+                return;
+
+            _previousDirection = _direction;
+            _sameDirection = AreVectorsEqual(_previousDirection, _direction, 0.2f);
+            _direction = firingData.DirToLaunch;
+            _totalTime = firingData.TimeToTarget;
+        }
+
+       
 
         //Show drag indicator/update direction to calculated drag direction
         if (UseDrag)
@@ -83,12 +121,44 @@ public class ProjectileLauncherAtTarget : BaseLauncher
             _dragLandingPos.y = 0.01f;
             DragIndicator.GetComponent<SpriteRenderer>().enabled = true;
             DragIndicator.transform.position = _dragLandingPos;
+            
+            if (RefineLauncherToHitTarget && _isRefined == false)
+            {
+                //Calculate firing data to reach target
+                _speedBeforeRefinedDrag = _speed;
+                _speed = 10f;
+                FiringData firingData = CalculateFiringData();
+                if (!firingData.IsValid)
+                    return;
 
-            _direction = CalculateRefinedDirWithDragForce();
+                _previousDirection = _direction;
+                _sameDirection = AreVectorsEqual(_previousDirection, _direction, 0.2f);
+                _direction = firingData.DirToLaunch;
+                _totalTime = firingData.TimeToTarget;
+
+                bool success = true;
+
+                _directionBeforeRefinedDrag = _previousDirection;
+                _direction = RefinedLauncherWithDragForce(ref success);
+                if (success)
+                {
+                    GetComponent<MeshRenderer>().material = ValidShotMaterial;
+                }
+                else
+                {
+                    SetSpeed(_speedBeforeRefinedDrag);
+                    GetComponent<MeshRenderer>().material = InvalidShotMaterial;
+                }
+                
+               
+
+               
+            }
+
         }
         
         //Update visualization
-        Predicter.SetPhysicsSettings(LaunchPos, _direction, _speed, _totalTime, UseDrag, k, c);
+        Predicter.SetPhysicsSettings(LaunchPos, _direction, _speed, _totalTime, UseDrag, (UseDrag) ? k : 0f, (UseDrag) ? c : 0f);
 
         //Since time is calculated in here, we're going to grab the UI from the controller and set the setting here
         GetComponent<ProjectileLauncherController>().Display.SetTimeToLand(_totalTime);
@@ -143,28 +213,38 @@ public class ProjectileLauncherAtTarget : BaseLauncher
         return firingData;
     }
 
-    Vector3 CalculateRefinedDirWithDragForce()
+    Vector3 RefinedLauncherWithDragForce(ref bool success, bool isRecursiveAttempt = false)
     {
         //Only recalculate the refined drag direction when changed
-        if (_sameDirection)
+        if (_sameDirection && _isRefined)
             return _direction;
 
         //Calculate firing solution, and get initial landing position guess
-        float distanceToDragLanding = (_dragLandingPos - LaunchPos.position).magnitude;
-        float distanceToTarget = (Target.position - LaunchPos.position).magnitude;
-        float distanceDiff = distanceToDragLanding - distanceToTarget;
+        int sign = (_dragLandingPos.x < 0 || _dragLandingPos.z < 0) ? -1 : 1;
+        int signT = (Target.position.x < 0 || Target.position.z < 0) ? -1 : 1;
+        float distanceToDragLanding = (_dragLandingPos - LaunchPos.position).magnitude * sign;
+        float distanceToTarget = (Target.position - LaunchPos.position).magnitude * signT;
+        float distanceDiff = Mathf.Abs(distanceToDragLanding) - Mathf.Abs(distanceToTarget);
 
         //If our initial guess isn't too far from the landing position with drag -> use initial direction
         if (Mathf.Abs(distanceDiff) < DragMargin + float.Epsilon)
         {
+            _isRefined = true;
+            _speed = _speedBeforeRefinedDrag;
             return _direction;
         }
 
         //Binary search to ensure closer trajectory to target
         float minBound = 0;
         float maxBound = 0;
-        Vector3 dirToT = Target.position - LaunchPos.position;
-        float angle = Mathf.Asin(_direction.y / _direction.magnitude);
+        //Vector3 dirToT = Target.position - LaunchPos.position;
+       
+        Vector3 fwdDirection = _direction;
+        fwdDirection.y = 0;
+        fwdDirection = fwdDirection.normalized;
+        //float angle = Mathf.Asin(_direction.y / _direction.magnitude);
+        float angle = Vector3.Angle(fwdDirection, _direction);
+        angle *= Mathf.Deg2Rad;
         if (distanceDiff > 0)
         {
             //Maximum bound -> use shortest possible shot as minimum bound
@@ -173,68 +253,101 @@ public class ProjectileLauncherAtTarget : BaseLauncher
 
             //Create new rotated direction
             Vector3 dirCopy = _direction;
-            Vector3 newDir = Quaternion.AngleAxis(minBound * Mathf.Rad2Deg, Vector3.forward) * dirCopy;
+            //Vector3 newDir = Quaternion.AngleAxis(minBound * Mathf.Rad2Deg, Vector3.forward) * dirCopy;
+            Vector3 newDir = Quaternion.AngleAxis(minBound * Mathf.Rad2Deg, fwdDirection) * dirCopy;
 
             //Calculate new landing pos and check if it's close enough in distance to target
             Vector3 landingPos = CalculatePositionWithDragForce(_totalTime, newDir);
             landingPos.y = 0.01f;
-            float distanceToLandPos = (landingPos - LaunchPos.position).magnitude;
-            float diff = distanceToLandPos - distanceToTarget;
+            float distanceToLandPos = (landingPos - LaunchPos.position).magnitude * sign;
+            float diff = Mathf.Abs(distanceToLandPos) - Mathf.Abs(distanceToTarget);
 
             //If so, use this as direction
             if (Mathf.Abs(diff) < DragMargin + float.Epsilon)
+            {
+                _isRefined = true;
                 return newDir;
+            }
+                
         }
         else
         {
-            //Need to check for maximum bound here
-            minBound = angle;
-            maxBound = Mathf.PI / 4f;
-
-            //Create new rotated direction
-            Vector3 dirCopy = _direction;
-            Vector3 newDir = Quaternion.AngleAxis(maxBound * Mathf.Rad2Deg, Vector3.forward) * dirCopy;
-
-            //Calculate new landing pos and check if it's close enough in distance to target
-            Vector3 landingPos = CalculatePositionWithDragForce(_totalTime, newDir);
-            landingPos.y = 0.01f;
-            float distanceToLandPos = (landingPos - LaunchPos.position).magnitude;
-            float diff = distanceToLandPos - distanceToTarget;
-
-            //If so, use this as direction
-            if (Mathf.Abs(diff) < DragMargin + float.Epsilon)
-                return newDir;
-
-            //If not, check if we even overshoot the target with best possible angle
-            if (diff < 0)
+            bool keepLoop = true;
+            while (keepLoop)
             {
-                //Need to increase the force in that case, and retry until we get it right
-                _speed += 1f;
-                _iterationCounter += 1;
-                if (_iterationCounter < _maxIterations)
+                //Need to check for maximum bound here
+                minBound = angle;
+                maxBound = Mathf.PI / 4f;
+
+                //Create new rotated direction
+                Vector3 dirCopy = _direction;
+               // Vector3 newDir = Quaternion.AngleAxis(maxBound * Mathf.Rad2Deg, Vector3.forward) * dirCopy;
+                Vector3 newDir = Quaternion.AngleAxis(maxBound * Mathf.Rad2Deg, fwdDirection) * dirCopy;
+               
+                //try it with fwdDirection again !!!===!!!===!!!===!!!===!!!===!!!===!!!===!!!===
+                //try it with fwdDirection again !!!===!!!===!!!===!!!===!!!===!!!===!!!===!!!===
+                //try it with fwdDirection again !!!===!!!===!!!===!!!===!!!===!!!===!!!===!!!===
+                //try it with fwdDirection again !!!===!!!===!!!===!!!===!!!===!!!===!!!===!!!===
+                
+                //Calculate new landing pos and check if it's close enough in distance to target
+                Vector3 landingPos = CalculatePositionWithDragForce(_totalTime, newDir);
+                landingPos.y = 0.01f;
+                float distanceToLandPos = (landingPos - LaunchPos.position).magnitude * sign;
+                float diff = Mathf.Abs(distanceToLandPos) - Mathf.Abs(distanceToTarget);
+
+                //If so, use this as direction
+                if (Mathf.Abs(diff) < DragMargin + float.Epsilon)
                 {
-                    return CalculateRefinedDirWithDragForce();
+                    _isRefined = true;
+                    return newDir;
+                }
+
+                //If not, check if we even overshoot the target with best possible angle
+                if (diff < 0)
+                {
+                    if (_iterationCounter == 0)
+                        SetSpeed(1f);
+
+                    //Need to increase the force in that case, and retry until we get it right
+                    SetSpeed(_speed + 1f);
+                    _iterationCounter += 1;
+                    if (_iterationCounter < _maxIterations)
+                    {
+                        continue;
+                        //return RefinedLauncherWithDragForce(ref success, true);
+                    }
+                    else
+                    {
+                        //If it seems we can't even get it right even by increasing the force, just reset it and set invalid shot
+                        _iterationCounter = 0;
+                        SetSpeed(_speedBeforeRefinedDrag);
+
+                        _isRefined = true;
+
+                        success = false;
+                        return _directionBeforeRefinedDrag;
+                    }
                 }
                 else
                 {
-                    //If it seems we can't even get it right even by increasing the force, just reset it and return regular direction
-                    _iterationCounter = 0;
-                    _speed -= _maxIterations;
-                    return _direction;
+                    keepLoop = false;
                 }
             }
+            
         }
 
         //We have a min and max bound -> so search for something inbetween that will fit the margin
-        Vector3 closestDir = new Vector3();
-
-        float rDist = float.MaxValue;
+        Vector3 closestDir = _direction;
+        _iterationCounter = 0;
+        float rDist = DragMargin*100f;
         while (Mathf.Abs(rDist) < DragMargin + float.Epsilon)
         {
+            _iterationCounter++;
             float a = (maxBound - minBound) / 2f;
 
             Vector3 dirCopy = _direction;
             closestDir = Quaternion.AngleAxis(a * Mathf.Rad2Deg, Vector3.forward) * dirCopy;
+            //closestDir = Quaternion.AngleAxis(a * Mathf.Rad2Deg, fwdDirection) * dirCopy;
 
             //Calculate new landing pos and check if it's close enough in distance to target
             Vector3 landingPos = CalculatePositionWithDragForce(_totalTime, closestDir);
@@ -246,7 +359,15 @@ public class ProjectileLauncherAtTarget : BaseLauncher
                 minBound = angle;
             else
                 maxBound = angle;
+
+            if (_iterationCounter > _maxIterations)
+            {
+                success = false;
+                _isRefined = true;
+                return closestDir.normalized;
+            }
         }
+        _isRefined = true;
         return closestDir.normalized;
 
     }
@@ -290,11 +411,11 @@ public class ProjectileLauncherAtTarget : BaseLauncher
 
     private bool AreVectorsEqual(Vector3 v1, Vector3 v2, float precision)
     {
-        if (Mathf.Abs(_previousDirection.x - _firingData.DirToLaunch.x) > precision) 
+        if (Mathf.Abs(v1.x - v2.x) > precision) 
             return false;
-        else if (Mathf.Abs(_previousDirection.y - _firingData.DirToLaunch.y) > precision) 
+        else if (Mathf.Abs(v1.y - v2.y) > precision) 
             return false;
-        else if (Mathf.Abs(_previousDirection.z - _firingData.DirToLaunch.z) > precision) 
+        else if (Mathf.Abs(v1.z - v2.z) > precision) 
             return false;
         else
             return true;

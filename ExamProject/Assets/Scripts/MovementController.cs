@@ -18,19 +18,19 @@ public class MovementController : MonoBehaviour
     {
         if (Input.GetKey(KeyCode.LeftArrow))
         {
-            _transform.Translate(Vector3.left * MovementSpeed * Time.deltaTime);
+            _transform.Translate(MovementSpeed * Time.deltaTime* Vector3.left);
         }
         if (Input.GetKey(KeyCode.RightArrow))
         {
-            _transform.Translate(Vector3.right * MovementSpeed * Time.deltaTime);
+            _transform.Translate(MovementSpeed * Time.deltaTime * Vector3.right);
         }
         if (Input.GetKey(KeyCode.UpArrow))
         {
-            _transform.Translate(Vector3.down * MovementSpeed * Time.deltaTime);
+            _transform.Translate(MovementSpeed * Time.deltaTime * Vector3.down);
         }
         if (Input.GetKey(KeyCode.DownArrow))
         {
-            _transform.Translate(Vector3.up * MovementSpeed * Time.deltaTime);
+            _transform.Translate(MovementSpeed * Time.deltaTime * Vector3.up);
         }
     }
 }

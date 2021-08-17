@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 /* 
  * This is one type of launcher in which a direction and speed is given, and a target position is calculated
  * All physics related formula's are based on the book "AI For Games", by Ian Millington (Paragraph 3.5 Physics Prediction)
+ * 
  */
 
 public class ProjectileLauncher : BaseLauncher
