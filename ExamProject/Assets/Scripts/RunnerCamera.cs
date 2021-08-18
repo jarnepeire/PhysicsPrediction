@@ -9,7 +9,6 @@ public class RunnerCamera : MonoBehaviour
     private bool _isRunning;
     public LayerMask LayerMask;
 
-    // Start is called before the first frame update
     void Start()
     {
         _isRunning = false;

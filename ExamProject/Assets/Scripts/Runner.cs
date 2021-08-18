@@ -8,21 +8,23 @@ public class Runner : MonoBehaviour
     {
         public ProjectilePrediction(float speed, float time, Vector3 pos)
         {
-            _predictedSpeed = speed;
-            _timeToCatch = time;
-            _predictedLandingPos = pos;
+            PredictedSpeed = speed;
+            TimeToCatch = time;
+            PredictedLandingPos = pos;
         }
 
-        public float _predictedSpeed;
-        public float _timeToCatch;
-        public Vector3 _predictedLandingPos;
+        public float PredictedSpeed;
+        public float TimeToCatch;
+        public Vector3 PredictedLandingPos;
     }
 
     [Header("Materials")]
     public Material InactiveMaterial;
     public Material ActiveMaterial;
+
+    [Header("Catching")]
     public Transform CatchLocation;
-    public bool UseLagrange = false;
+    public bool UseLagrangePrediction = false;
 
     //Private Variables
     private Vector3 _startPos;
@@ -38,15 +40,14 @@ public class Runner : MonoBehaviour
     private bool _canRun;
     private float _runningTimeElapsed;
 
-    private Vector3 _gravityVector;
-    Vector3 _runnerVel;
-    ProjectilePrediction _projectilePrediction;
+    private Vector3 _gravityVector = new Vector3(0f, -9.81f, 0f);
+    private Vector3 _runnerVel;
+    private ProjectilePrediction _projectilePrediction;
 
-    // Start is called before the first frame update
     void Start()
     {
         _projectilePrediction = new ProjectilePrediction(0f, 0f, new Vector3(0f, 0f, 0f));
-        _gravityVector = new Vector3(0f, -9.81f, 0f);
+
         GetComponent<MeshRenderer>().material = InactiveMaterial;
         _startPos = transform.position;
         _startRot = transform.rotation;
@@ -87,7 +88,7 @@ public class Runner : MonoBehaviour
     {
         this.GetComponent<Rigidbody>().velocity = _runnerVel;
         _runningTimeElapsed += Time.deltaTime;
-        if (_runningTimeElapsed > _projectilePrediction._timeToCatch)
+        if (_runningTimeElapsed > _projectilePrediction.TimeToCatch)
         {
             StopRunning();
         }
@@ -95,7 +96,7 @@ public class Runner : MonoBehaviour
 
     private ProjectilePrediction PredictProjectile()
     {
-        if (UseLagrange)
+        if (UseLagrangePrediction)
             return PredictProjectileLagrange();
         else
             return PredictProjectilePhysics3D();
@@ -118,7 +119,7 @@ public class Runner : MonoBehaviour
         //Our highest point to be the landing X position in our 2D-plane
         float futX = Mathf.Max(ips[0], ips[1]);
 
-        //We'll create this fake 2D speed to find the remaning time untill landing
+        //We'll create this fake 2D speed to find the remaining time until landing
         //We can take a projected distance from the first two positions and divide it by the time it needed from 1 point to the other
         float p1_p2_distance2D = Mathf.Sqrt((dir.x * dir.x) + (dir.z * dir.z));
         float p1_p2_time = _timers3D[1] - _timers3D[0];
@@ -138,14 +139,14 @@ public class Runner : MonoBehaviour
         //Now we can predict our final location, because our time factor here is the remaining time, this counters out the first observed direction we have
         //Which results in a pretty accurate predicted location
         Vector3 projectileDir = dir.normalized;
-        Vector3 predictedLocation = _positions3D[0] + projectileDir * (speed3D * timeToLand) + new Vector3(0f, -9.81f, 0f) * (timeToLand * timeToLand) / 2f;
+        Vector3 predictedLocation = _positions3D[0] + projectileDir * (speed3D * timeToLand) + _gravityVector * (timeToLand * timeToLand) / 2f;
 
         //Setup prediction information
         ProjectilePrediction prediction;
-        prediction._predictedLandingPos = predictedLocation;
-        prediction._predictedLandingPos.y = 0f;
-        prediction._timeToCatch = timeToLand;
-        prediction._predictedSpeed = speed3D;
+        prediction.PredictedLandingPos = predictedLocation;
+        prediction.PredictedLandingPos.y = 0f;
+        prediction.TimeToCatch = timeToLand;
+        prediction.PredictedSpeed = speed3D;
 
         return prediction;
     }
@@ -180,10 +181,10 @@ public class Runner : MonoBehaviour
 
         //Setup prediction information
         ProjectilePrediction prediction;
-        prediction._predictedLandingPos = futureCatchPos;
-        prediction._predictedLandingPos.y = 0f;
-        prediction._timeToCatch = timeToCatch;
-        prediction._predictedSpeed = speed;
+        prediction.PredictedLandingPos = futureCatchPos;
+        prediction.PredictedLandingPos.y = 0f;
+        prediction.TimeToCatch = timeToCatch;
+        prediction.PredictedSpeed = speed;
 
         return prediction;
     }
@@ -213,7 +214,7 @@ public class Runner : MonoBehaviour
         float c = nominatorC / denominator;
 
         //Calculate two intersection points of this quadratic equation 
-        //Keep in mind, these intersection points are defined in our 2D-plane (
+        //Keep in mind, these intersection points are defined in our 2D-plane
         float D = (b * b) - 4 * a * c;
         float ip1 = (-b - Mathf.Sqrt(D)) / (2 * a);
         float ip2 = (-b + Mathf.Sqrt(D)) / (2 * a);
@@ -242,16 +243,16 @@ public class Runner : MonoBehaviour
         GetComponent<MeshRenderer>().material = ActiveMaterial;
 
         //Setup movement for runner
-        Vector3 toTarget = _projectilePrediction._predictedLandingPos - transform.position;
+        Vector3 toTarget = _projectilePrediction.PredictedLandingPos - transform.position;
         Vector3 dir = toTarget.normalized;
         
         //Rotate to target
         Vector3 lookAtRotation = dir;
         lookAtRotation.y = 0f;
-         transform.rotation = Quaternion.LookRotation(lookAtRotation);
+        transform.rotation = Quaternion.LookRotation(lookAtRotation);
 
         //Set velocity
-        float speed = toTarget.magnitude / _projectilePrediction._timeToCatch;
+        float speed = toTarget.magnitude / _projectilePrediction.TimeToCatch;
         _runnerVel = dir * speed;
         _runnerVel.y = 0f;
         this.GetComponent<Rigidbody>().velocity = _runnerVel;

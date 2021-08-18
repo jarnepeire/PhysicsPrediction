@@ -98,7 +98,7 @@ LightmapSettings:
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
-  m_UseShadowmask: 0
+  m_UseShadowmask: 1
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -888,11 +888,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f01a904489d527348a04ddc992d5812a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  LaunchPos: {fileID: 1910633492}
   ProjectilePrefab: {fileID: 3811384584696313345, guid: 13c7a13fe8950884299dbba310106535,
     type: 3}
   ProjectileLifetimeMultiplier: 2
-  predicter: {fileID: 1485029685}
+  LaunchPos: {fileID: 1910633492}
+  Predicter: {fileID: 1485029685}
   UseHitIndicator: 1
   HitIndicator: {fileID: 127072521}
 --- !u!114 &574993711
@@ -907,12 +907,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a968a74c6778c9a40b84d0a154a2394c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DisableMovement: 0
+  Launcher: {fileID: 574993706}
+  Speed: 10
+  SpeedIncrement: 0.5
+  DisableManualLauncherRotation: 0
   UseMaxAngle: 1
   RotationSpeed: 50
   MaxAngleInDegrees: 30
-  IsTargetLauncher: 0
-  Speed: 10
   Display: {fileID: 1725965813}
 --- !u!1 &585927190
 GameObject:
@@ -1391,7 +1392,7 @@ MonoBehaviour:
   InactiveMaterial: {fileID: 2100000, guid: 235ed01d2d9f43041b86ffb52b65f884, type: 2}
   ActiveMaterial: {fileID: 2100000, guid: 47382967ea454864c9e380c46a4a28ce, type: 2}
   CatchLocation: {fileID: 1317077742}
-  UseLagrange: 0
+  UseLagrangePrediction: 0
 --- !u!65 &1107324158
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1627,12 +1628,10 @@ MonoBehaviour:
   UsingDrag: 0
   Projectile: {fileID: 7438615752754655162, guid: 13c7a13fe8950884299dbba310106535,
     type: 3}
+  SceneObjectsToSimulate: []
   LineRender: {fileID: 0}
+  LineMaterial: {fileID: 2100000, guid: 3f7a864519062ac4fbb81c90a9c5e7ce, type: 2}
   CustomLineSegments: 50
-  SceneObjects:
-  - {fileID: 340770759}
-  A: {x: 0, y: 0, z: 0}
-  B: {x: 0, y: 0, z: 0}
 --- !u!4 &1485029686
 Transform:
   m_ObjectHideFlags: 0
