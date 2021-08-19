@@ -15,7 +15,7 @@ To give a little bit of context, the year of creating this project (2020-2021) I
 The words "physics predictions" probably can paint a little picture in your head already. Literally predicting certain states, situations, times, locations, velocities or variables of objects due to physics being applied on them. It can vary from simply following the position of the ball in a game of Pong to know when to reflect the ball from the corners of the world, to calculating the best way to move so you can catch a flying ball through the air (*spoiler alert*). You may want to predict when a bullet will hit the enemy after shooting. Maybe you'd like to visualize where your ball will land in your awesome new re-make of Wii Tennis? These are the kinds of situations concerning physics predictions. In detail it involves mathematical and physical formula's based on what you know to reach what you want to know.
 
 ### How? 
-I will be using Unity Engine (version 2019.4.16f1) to create some demo's I have pictured on paper. I will be using Unity's built in physics system to display what it can do, as well as making my own implementation based on physical formulas to display what I came up with. The idea of my own implementation is to make a cannon that can shoot projectiles through the air in a physically accurate motion. The cannon can be controlled to change direction or to change the force behind the projectile. Furthermore, there will be an AI that will observe the area, calculating when and where it will land, to then calculate the optimal velocity to intercept the projectile and catch it. It does not receive any pre-calculated information from the launcher, and uses mathematical concepts to find starting variables such as time, speed and direction, to then continue with the actual physics prediction.
+I will be using Unity Engine (version 2019.4.16f1) to create some demo's I have pictured on paper. I will be using Unity's built in physics system to display what it can do, as well as making my own implementation based on physical formulas to display what I came up with. The idea of my own implementation is to make a cannon that can shoot projectiles through the air in a physically accurate motion. The cannon can be controlled to change direction or to change the force behind the projectile. Furthermore, there will be an AI that will observe the area, calculating when and where it will land, to then calculate the optimal velocity to intercept the projectile and catch it. It does not receive any pre-calculated information from the launcher, and uses mathematical concepts to find starting variables such as time, speed and direction, to then continue with the actual physics prediction. At last I will showcase how drag forces can modify the trajectory of a projectile and what is needed to return to its original trajectory.
 
 # How did I design/implement it?
 ## Projectile Launcher
@@ -25,6 +25,7 @@ The actual launcher which will be responsible for shooting the projectiles in th
 * Increase Force: X
 * Decrease Force: Z
 * Launch Projectile: SPACE
+* Other Controls Vary On Demo
 
 While it's being controlled and set-up for launch, it calculates the time until impact on the ground given its current force and direction. It's possible to calculate the time at other positions and not necessarily at impact of the ground. With this time, it calculates the position of impact. From all these given variables, it can figure out all positions starting at time X up until X + time until impact. It thens draw a line from each position to the next one in chronological order, visualizing its full trajectory until landing.
 
@@ -38,8 +39,8 @@ As mentioned before, it now knows its first 3 observed positions of this project
 ### Extra Prediction Method (Analytical Solution for 2D Predictions)
 An alternative predicting way is also implented, using Lagrange interpolations. Keep in mind, this way would work best for 2D predictions. To showcase that this works for our case, I use a work-around to convert our 3D problem into a 2D problem. Our 3D positions become 2D positions, and with those, we can form a quadratic polynomial using Lagrange interpolations. With this quadratic equation, we can substitute it into finding our 2 intersection points. The furthest intersection point having a projected X value of the landing position. With these variables, we can also estimate a direction, a "2d speed" and "2d distance" -> giving us the time and so on. This method has its limitations for 3D problems though, such as invalid discriminants when the positions are in the negative area of our world, which is caused by this little work-around from 3D to 2D. You won't encounter this in original 2D problems, and could perfectly predict positions in a 2D world (take Angry Birds as an example). 
 
-### Start Prediction With Drag
-An implementation of drag forces are in a fourth demo, predicting the physics trajectory of a projectile with drag forces applied on. Most games and implementations choose to ignore drag forces for its simplicity. If you want to make a golfing game and simulate wind, this can be done through drag forces. As of right now, it's possible to change the viscous drag force (ignoring aerodynamic drag forces for simplicity) and see the trajectory of the projectile (non-simulated). To showcase a different way of using physics predictions, I made this demo able to calculate a desired direction in order to hit a given target that you can control. Further steps would be to take the drag into account and refine the direction to land at the desired target. As of right now, there's functionality for it with some graphical bugs, so it's turned off for now. 
+## Hitting Targets & Drag Forces
+Most games and implementations choose to ignore drag forces for its simplicity. If you want to make a golfing game and simulate wind, this can be done through drag forces. As of right now, it's possible to change the viscous drag force (ignoring aerodynamic drag forces for simplicity) and see the trajectory of the projectile (non-simulated). To showcase a different way of using physics predictions, I made another demo able to calculate a desired direction in order to hit a given target that you can control. The next step is to see and show where our projectile will land now due to these additional drag forces. At last, we take the drag into account and refine the direction and speed to land at the desired target.
 
 # Results
 Now the most exciting part after all the technical explanations, the results!
@@ -52,20 +53,27 @@ Demo 2: Showcasing self inplemented physics predictions, the projectile launcher
 
 ![Interception Demo 1](/ImagesReadme/RunnerDemo1Gif.gif)
 
-Demo 3: Similar to demo 2, showcasing the observation of the AI more (starts predicting and running on projectile in sight)
+Demo 2: Showcasing the observation of the AI more (starts predicting and running on projectile in sight)
 
 ![Interception Demo 2](/ImagesReadme/RunnerDemo2Gif.gif)
 
-Demo 4: Given target, and visualization of trajectory for drag forces working on it
+Demo 3: Given target and visualization of trajectory to hit target
 
-![FiringWithDrag_Demo_1](/ImagesReadme/DragDemo.png)
+![ShootAtTargetDemo](/ImagesReadme/ShootAtTargetDemo.gif)
+
+Demo 3: Given target and visualization of trajectory when drag forces are applied
+
+![ShootAtTargetDragForces](/ImagesReadme/ShootAtTargetDragForces.gif)
+
+Demo 3: Given target and visualization of trajectory when drag forces are applied and direction is refined to hit target
+
+![ShootAtTargetDragForcesRefined](/ImagesReadme/ShootAtTargetDragForcesRefined.gif)
 
 # Conclusion/Future Extensions?
 While working on these demo's, I learned about what is accurate in real world physics and how it can be simplified into code and implementations. Seeing Unity's interesting physics system and some mathematical concepts I didn't know existed definitely widened my knowledge. I have a few fully working demo's showcasing different simple to more complex predictions that can directly be used or recognized in modern games of many genres. 
 
 It's a topic that can definitely be expanded upon, for instance:
 * Implementing acceleration and smoother movement
-* Implementing drag (air resistance) to refine directions to targets
 * Implementing rotating objects in flights, lift and how it impacts the trajectory
 
-It was a very fun project to work on, and I hope to be expanding on it soon for an even slicker portfolio piece.
+It was a very fun project to work on, and was continued in my free time to finish the part about drag forces. I hope to be expanding on it soon for an even slicker portfolio piece.
